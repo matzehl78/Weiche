@@ -214,16 +214,16 @@ const COLORS=[
   {name:'grün',shape:'diamond'},{name:'violett',shape:'star'},{name:'türkis',shape:'hex'}];
 const EMOJI_OK='🟩',EMOJI_BAD='🟥',EMOJI_NO='⬛';
 // [Knoten, Flipflops, Pakete, max. Tiefe]
-const LEVELS=[[1,0,2,1],[2,0,3,2],[1,1,3,1],[2,1,4,2],[3,1,4,2],[3,1,5,2],[3,2,5,2],[4,1,5,3],[4,2,6,3],[4,2,6,3],
-  [5,2,6,3],[5,2,7,3],[5,3,7,3],[5,2,8,3],[6,3,7,3],[6,3,8,3],[6,2,8,4],[7,3,8,4],[7,3,9,4],[7,4,10,4]];
-const DAILY=[5,2,7,3];
+const LEVELS=[[1,0,2,1],[2,0,3,2],[1,1,3,1],[2,1,4,2],[3,1,5,2],[3,2,5,2],[3,2,6,2],[4,2,6,3],[4,2,7,3],[4,3,7,3],
+  [5,2,7,3],[5,3,8,3],[5,3,8,3],[5,3,9,3],[6,3,8,3],[6,3,9,3],[6,4,9,4],[7,3,9,4],[7,4,10,4],[7,4,10,4]];
+const DAILY=[5,3,8,3];
 const TIPS={
   1:'Tippe auf die Weiche W1, um sie umzustellen. Die hell leuchtende Fahrstraße zeigt, wohin Paket 1 fährt. Dann Start.',
   2:'Jedes Paket muss auf dem Gleis mit seiner Farbe und Form landen.',
   3:'Neu: der Flipflop (eckig, T1). Nach jedem Paket wechselt er die Richtung. Du stellst nur ein, wohin er zuerst schaltet.',
   5:'Lies die Paketfolge oben von links nach rechts. Die Reihenfolge entscheidet.',
-  7:'Zwei Flipflops: Jeder wechselt nur, wenn ein Paket über ihn fährt.',
-  13:'Drei Flipflops. Arbeite dich vom Zielgleis rückwärts zur Einfahrt.'};
+  6:'Zwei Flipflops: Jeder wechselt nur, wenn ein Paket über ihn fährt.',
+  10:'Drei Flipflops. Arbeite dich vom Zielgleis rückwärts zur Einfahrt.'};
 
 /* ---------- Speicher ---------- */
 const STORE='weiche.v1';
@@ -232,7 +232,7 @@ const P=Object.assign({unlocked:1,stars:{},daily:{}},load());
 function save(){try{localStorage.setItem(STORE,JSON.stringify(P))}catch(e){}}
 
 /* ---------- Auswertung (anonym, ohne Cookies) ---------- */
-const VERSION='v0.2';
+const VERSION='v0.3';
 // GoatCounter-Code eintragen, z. B. 'weiche' für weiche.goatcounter.com. Leer = es wird nichts gesendet.
 const CONFIG={goatcounter:'weiche'};
 const S=P.stats=Object.assign({first:todayKey(),days:[],levels:{}},P.stats||{});
@@ -281,10 +281,13 @@ function simulate(T,states,n){
   return {out,visits};
 }
 function genLevel(seed,[k,f,n,maxD]){
+  // Erzeugt viele gültige Kandidaten und nimmt den, bei dem falsche Stellungen möglichst spät auffallen.
+  // So muss man vorausdenken, statt sich Paket für Paket durchzuprobieren.
   const passes=[[1,true],[2,true],[3,true],[8,true],[64,false]];
   for(const [maxSol,strict] of passes){
     const r=rngOf(seed*7919+maxSol*31);
-    for(let tries=0;tries<700;tries++){
+    let best=null;
+    for(let tries=0,found=0;tries<2500&&found<150;tries++){
       const T=buildTree(r,k,maxD);if(!T)continue;
       const internals=[],leaves=[];
       // Breitensuche für Nummerierung
@@ -299,24 +302,33 @@ function genLevel(seed,[k,f,n,maxD]){
       if(internals.some(i=>T.nodes[i].kind==='T'&&visits[i]<2))continue;
       const target=out.map(li=>T.nodes[li].color);
       if(f>0&&new Set(target).size<2)continue;
-      const sols=[];
+      const solMask=internals.reduce((a,ii,b)=>a|(sol[ii]<<b),0);
+      const sols=[];let late=0,nearSum=0,nearCnt=0;
       for(let m=0;m<(1<<k);m++){
         const st=new Array(T.nodes.length).fill(0);internals.forEach((ii,b)=>st[ii]=(m>>b)&1);
         const res=simulate(T,st,n).out;
-        if(res.every((li,p)=>T.nodes[li].color===target[p]))sols.push(st);
+        let g=0;while(g<n&&T.nodes[res[g]].color===target[g])g++; // richtige Pakete bis zum ersten Fehler
+        if(g===n){sols.push(st);continue}
+        if(g>late)late=g;
+        const d=m^solMask;if((d&(d-1))===0){nearSum+=g;nearCnt++} // nur eine Weiche falsch
       }
       if(sols.length>maxSol||sols.length===(1<<k))continue;
-      let start=null;
-      for(let t=0;t<60&&!start;t++){
-        const st=new Array(T.nodes.length).fill(0);internals.forEach(i=>st[i]=r()<.5?1:0);
-        if(!sols.some(s=>internals.every(i=>s[i]===st[i])))start=st;
-      }
-      if(!start)continue;
-      let wn=0,tn=0;internals.forEach(i=>{const nd=T.nodes[i];nd.label=nd.kind==='T'?'T'+(++tn):'W'+(++wn)});
-      const L={T,internals,leaves,target,sols,start,n,k,f};
-      layout(L,0,0);
-      return L;
+      found++;
+      const score=0.6*late/n+0.4*(nearCnt?nearSum/nearCnt/n:0);
+      if(!best||score>best.score)best={score,late,T,internals,leaves,target,sols};
     }
+    if(!best)continue;
+    const {T,internals,leaves,target,sols,late}=best;
+    let start=null;
+    for(let t=0;t<200&&!start;t++){
+      const st=new Array(T.nodes.length).fill(0);internals.forEach(i=>st[i]=r()<.5?1:0);
+      if(!sols.some(s=>internals.every(i=>s[i]===st[i])))start=st;
+    }
+    if(!start)continue;
+    let wn=0,tn=0;internals.forEach(i=>{const nd=T.nodes[i];nd.label=nd.kind==='T'?'T'+(++tn):'W'+(++wn)});
+    const L={T,internals,leaves,target,sols,start,n,k,f,late};
+    layout(L,0,0);
+    return L;
   }
   throw new Error('Level konnte nicht erzeugt werden');
 }

@@ -25,10 +25,10 @@ html{zoom:${ZOOM}}
 .tap{position:fixed;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:3px solid #fff1cf;background:rgba(255,241,207,.18);
   pointer-events:none;z-index:60;animation:tap .5s ease-out forwards}
 @keyframes tap{from{transform:scale(.3);opacity:1}to{transform:scale(1.25);opacity:0}}
-#cover{position:fixed;inset:0;background:#1b2225;z-index:100}`;
+#cover{position:fixed;inset:0;background:#1b2225;z-index:100;pointer-events:none}`;
 
 class Scene {
-  constructor(page) { this.p = page; this.cur = null; this.L = null; this.speed = 1; }
+  constructor(page) { this.p = page; this.cur = null; this.L = null; this.speed = 1; this.log = []; }
   async caption(text) { await this.p.evaluate(t => { document.querySelector('#cap').textContent = t; }, text); }
   async reveal() { await this.p.evaluate(() => { const c = document.querySelector('#cover'); c && c.remove(); }); this.t1 = Date.now(); }
   async setSpeed(n) { while (this.speed !== n) { await this.p.evaluate(() => document.querySelector('#btnSpeed').click()); this.speed = this.speed === 3 ? 1 : this.speed + 1; } }
@@ -68,7 +68,10 @@ class Scene {
   async run() {
     await this.click('#btnStart');
     await this.p.waitForFunction(() => !document.querySelector('#overlay').hidden || document.querySelector('#status').classList.contains('bad'), null, { timeout: 60000 });
-    return this.p.evaluate(() => !document.querySelector('#overlay').hidden);
+    const win = await this.p.evaluate(() => !document.querySelector('#overlay').hidden);
+    const at = win ? '' : await this.p.evaluate(() => document.querySelectorAll('#queue .pkg.done').length + 1);
+    this.log.push(win ? 'gelöst' : `Fehler bei Paket ${at}/${this.L.n}`);
+    return win;
   }
 }
 
@@ -117,7 +120,7 @@ const CLIPS = [
     await page.evaluate(() => document.fonts.ready);
     const s = new Scene(page);
     await fn(s);
-    if (process.env.DEBUG) console.log('  Fehler tritt auf nach richtigen Paketen:', s.L.flips.slice(0, 3).map(f => f.good).join(', '), 'von', s.L.n);
+
     const lead = ((s.t1 - t0) / 1000 + 0.15).toFixed(2);
     const video = page.video();
     await ctx.close();
@@ -125,7 +128,7 @@ const CLIPS = [
     execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', lead, '-i', src, '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo', '-shortest',
       '-vf', 'scale=1080:1920:flags=lanczos,fps=30', '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '96k', '-movflags', '+faststart', dst]);
     const dur = execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', dst]).toString().trim();
-    console.log(`clip-${String(nr).padStart(2, '0')}.mp4  ${Number(dur).toFixed(1)} s  ${(fs.statSync(dst).size / 1e6).toFixed(1)} MB  „${text}"`);
+    console.log(`clip-${String(nr).padStart(2, '0')}.mp4  ${Number(dur).toFixed(1)} s  ${(fs.statSync(dst).size / 1e6).toFixed(1)} MB  „${text}"  [${s.log.join(' → ')}]`);
   }
   await browser.close();
   fs.rmSync(TMP, { recursive: true, force: true });

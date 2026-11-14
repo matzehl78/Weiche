@@ -4,7 +4,7 @@ Zwei Spiele-Prototypen für die Validierungsphase. Beide laufen im Browser, ohne
 
 | Spiel | Link | Idee |
 |---|---|---|
-| **Weiche** (v0.2) | https://matzehl78.github.io/Weiche/ | Logik-Puzzle im Stil eines Stellwerks: Weichen und Flipflops so stellen, dass jedes Paket auf dem Gleis seiner Farbe landet. |
+| **Weiche** (v0.3) | https://matzehl78.github.io/Weiche/ | Logik-Puzzle im Stil eines Stellwerks: Weichen und Flipflops so stellen, dass jedes Paket auf dem Gleis seiner Farbe landet. |
 | **50 Hertz** (v0.1) | https://matzehl78.github.io/Weiche/50hertz/ | Idle-Spiel: die Netzfrequenz mit Kraftwerken, Speichern und Lastabwurf im Band halten und das Netz ausbauen. Deutsch und Englisch. |
 
 ## Weiche
