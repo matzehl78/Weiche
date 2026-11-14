@@ -2,7 +2,7 @@
 
 Ein Logik-Puzzle für Mobile im Stil eines Stellwerks: Stelle Weichen und Flipflops so, dass jedes Paket auf dem Gleis seiner Farbe landet. Jedes Level ist allein mit Logik lösbar.
 
-**Status:** Prototyp v0.1 für die Validierungsphase (spielbar im Browser).
+**Status:** Prototyp v0.2 für die Validierungsphase (spielbar im Browser).
 
 ## Spielen
 
@@ -24,12 +24,15 @@ Lokal: `web/index.html` im Browser öffnen. Es braucht keinen Build und keinen S
 - Tagesrätsel mit Seed aus dem Datum und teilbarem Emoji-Ergebnis.
 - Tipps, Tempo 1–3×, Sterne-Wertung. Der Fortschritt wird im Browser gespeichert (localStorage).
 - Formen zusätzlich zu Farben, damit auch Menschen mit Farbschwäche spielen können.
+- Fragebogen im Spiel (5 Fragen) mit angehängtem Spielstand zum Kopieren.
+- Optionale anonyme Nutzungsstatistik über GoatCounter, standardmäßig aus.
 
 ## Projektstruktur
 
 ```
 web/index.html         Spielbarer Prototyp (eine Datei, ohne Abhängigkeiten außer Google Fonts)
 docs/marktanalyse.md   Markt-, Wettbewerbs- und Umsatzanalyse, Entscheidungsmatrix, Roadmap
+docs/testphase.md      Anleitung für die Testphase: Fragebogen, Statistik, Go/No-Go-Kennzahlen
 ```
 
 ## Nächste Schritte

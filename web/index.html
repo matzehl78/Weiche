@@ -32,12 +32,14 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);ou
 .screen{flex:1;min-height:0;display:flex;flex-direction:column;padding-block:12px}
 
 /* ---------- Menü ---------- */
-#menu{justify-content:center;gap:22px;align-items:stretch}
+#menu{gap:18px;align-items:stretch;overflow:auto}
+#menu>:first-child{margin-top:auto}
+#menu>:last-child{margin-bottom:auto}
 .brand{display:flex;flex-direction:column;gap:6px}
 .eyebrow{font-family:var(--f-display);font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-size:13px}
 .wordmark{font-family:var(--f-display);font-weight:700;font-size:clamp(64px,18vw,112px);line-height:.85;letter-spacing:.04em;margin:0}
 .lede{color:var(--muted);max-width:42ch;line-height:1.45;margin:0}
-.hero{border:1px solid var(--frame);border-radius:14px;height:clamp(150px,30vh,240px);
+.hero{border:1px solid var(--frame);border-radius:14px;height:clamp(120px,24vh,220px);flex:none;
   background:linear-gradient(var(--grid) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/28px 28px,var(--panel-2)}
 .hero svg{width:100%;height:100%;display:block}
 .menu-actions{display:grid;gap:10px}
@@ -124,6 +126,20 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);ou
 .share{margin:0;padding:10px;border-radius:10px;background:var(--panel);font-size:18px;line-height:1.3;white-space:pre-wrap;word-break:break-word;user-select:all}
 .card .row{display:grid;gap:8px}
 .copied{font-size:13px;color:var(--ok);min-height:1.2em}
+/* ---------- Feedback ---------- */
+#feedback{overflow:auto}
+.fb{display:grid;gap:18px;padding-bottom:16px}
+.fb fieldset{border:0;padding:0;margin:0;min-width:0}
+.fb legend,.fb .q{font-weight:600;padding:0;margin-bottom:8px;display:block}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.chip span{display:block;min-width:46px;text-align:center;padding:10px 14px;border-radius:10px;background:var(--panel-3);border:1px solid var(--frame);font-weight:600}
+.chip input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.scale{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px;max-width:290px;margin-top:6px}
+.fb textarea{width:100%;border-radius:10px;border:1px solid var(--frame);background:var(--panel-2);color:var(--ink);font:inherit;padding:10px;resize:vertical}
+.fb .err{color:var(--bad);font-size:13px;min-height:1.2em;margin:0}
 @media (max-width:380px){.grid{grid-template-columns:repeat(4,1fr)}.ctl{font-size:13px}}
 </style>
 </head>
@@ -141,8 +157,23 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);ou
       <button class="btn primary" id="btnContinue"><span>Weiterspielen</span><small id="contLabel">Level 1</small></button>
       <button class="btn" id="btnLevels"><span>Levelauswahl</span><small id="starTotal">0 / 60 ★</small></button>
       <button class="btn" id="btnDaily"><span>Tagesrätsel</span><small id="dailyLabel"></small></button>
+      <button class="btn" id="btnFeedback"><span>Feedback geben</span><small>5 kurze Fragen</small></button>
     </div>
-    <div class="foot">Prototyp v0.1 · 20 Level · Fortschritt bleibt in diesem Browser gespeichert</div>
+    <div class="foot" id="foot"></div>
+  </section>
+
+  <section id="feedback" class="screen" hidden>
+    <div class="bar"><button class="back" data-go="menu">‹ Menü</button><h2>Dein Feedback</h2></div>
+    <form id="fbForm" class="fb" novalidate>
+      <p class="lede">Fünf kurze Fragen. Am Ende kopierst du deine Antworten und schickst sie an die Person, die dir das Spiel gezeigt hat. Dein Spielstand wird als Text angehängt.</p>
+      <div id="fbQs" class="fb"></div>
+      <div><label class="q" for="fbText">5. Was hat dich gestört oder was hat dir gefehlt?</label>
+      <textarea id="fbText" rows="3" maxlength="600"></textarea></div>
+      <p class="err" id="fbErr" role="alert"></p>
+      <button type="submit" class="btn primary" style="justify-content:center"><span>Antworten kopieren</span></button>
+      <pre class="share" id="fbOut" hidden></pre>
+      <div class="copied" id="fbCopied" hidden></div>
+    </form>
   </section>
 
   <section id="levels" class="screen" hidden>
@@ -206,6 +237,29 @@ function load(){try{return JSON.parse(localStorage.getItem(STORE))||{}}catch(e){
 const P=Object.assign({unlocked:1,stars:{},daily:{}},load());
 function save(){try{localStorage.setItem(STORE,JSON.stringify(P))}catch(e){}}
 
+/* ---------- Auswertung (anonym, ohne Cookies) ---------- */
+const VERSION='v0.2';
+// GoatCounter-Code eintragen, z. B. 'weiche' für weiche.goatcounter.com. Leer = es wird nichts gesendet.
+const CONFIG={goatcounter:''};
+const S=P.stats=Object.assign({first:todayKey(),days:[],levels:{}},P.stats||{});
+function track(ev){
+  if(!CONFIG.goatcounter)return;
+  try{new Image().src='https://'+CONFIG.goatcounter+'.goatcounter.com/count?p='+encodeURIComponent('/ev/'+ev)+'&t='+encodeURIComponent(ev)+'&e=true&rnd='+Math.random().toString(36).slice(2)}catch(e){}
+}
+function lvStat(id){return S.levels[id]||(S.levels[id]={starts:0,runs:0,fails:0,hints:0,won:0,firstTry:null})}
+function visit(){
+  const k=todayKey();if(S.days.includes(k))return;
+  S.days.push(k);const n=S.days.length;
+  track(n===1?'visit/first':'visit/day-'+Math.min(n,7));
+  if(n>1&&Math.round((new Date(k)-new Date(S.first))/864e5)===1)track('visit/next-day');
+  save();
+}
+function copyText(text,pre,msg,okMsg){
+  const done=()=>{msg.hidden=false;msg.textContent=okMsg};
+  const fail=()=>{const rg=document.createRange();rg.selectNodeContents(pre);const sel=getSelection();sel.removeAllRanges();sel.addRange(rg);msg.hidden=false;msg.textContent='Text markiert. Kopiere ihn mit deinem Gerät.'};
+  try{navigator.clipboard.writeText(text).then(done,fail)}catch(e){fail()}
+}
+
 /* ---------- Zufall ---------- */
 function rngOf(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -264,26 +318,29 @@ function genLevel(seed,[k,f,n,maxD]){
         if(!sols.some(s=>internals.every(i=>s[i]===st[i])))start=st;
       }
       if(!start)continue;
-      internals.forEach((i,j)=>{T.nodes[i].num=0});
       let wn=0,tn=0;internals.forEach(i=>{const nd=T.nodes[i];nd.label=nd.kind==='T'?'T'+(++tn):'W'+(++wn)});
-      leaves.slice().sort((a,b)=>0).forEach(()=>{});
       const L={T,internals,leaves,target,sols,start,n,k,f};
-      layout(L);
+      layout(L,0,0);
       return L;
     }
   }
   throw new Error('Level konnte nicht erzeugt werden');
 }
-const COL=78,ROW=88,TOP=78,PADX=24;
-function layout(L){
+const TOP=78,BOT=78;
+// Passt den Spurplan an die Fläche an: schmale Spalten bei vielen Gleisen, gestreckte Reihen im Hochformat.
+function layout(L,cw,ch){
   const T=L.T,order=[];
   const ino=i=>{const nd=T.nodes[i];if(nd.leaf){order.push(i);return}ino(nd.l);ino(nd.r)};ino(T.root);
+  const n=order.length,COL=n>=8?56:n>=7?60:n>=6?66:78,PADX=n>=6?14:24;
   const maxDepth=Math.max(...L.internals.map(i=>T.nodes[i].depth));
+  const W=PADX*2+n*COL;
+  let ROW=88;
+  if(cw>0&&ch>0)ROW=Math.max(88,Math.min(170,(W*ch/cw-TOP-BOT)/(maxDepth+1)));
   const leafY=TOP+(maxDepth+1)*ROW;
   order.forEach((li,j)=>{const nd=T.nodes[li];nd.x=PADX+COL/2+j*COL;nd.y=leafY;nd.gl=j+1});
   const post=i=>{const nd=T.nodes[i];if(nd.leaf)return;post(nd.l);post(nd.r);nd.x=(T.nodes[nd.l].x+T.nodes[nd.r].x)/2;nd.y=TOP+nd.depth*ROW};
   post(T.root);
-  L.W=PADX*2+order.length*COL;L.H=leafY+78;L.srcY=TOP-52;L.order=order;
+  L.W=W;L.H=leafY+BOT;L.srcY=TOP-52;L.order=order;L.binW=Math.min(58,COL-12);
 }
 const cache={};
 function levelData(idx){return cache['L'+idx]||(cache['L'+idx]=genLevel(1000+idx*17,LEVELS[idx-1]))}
@@ -321,9 +378,9 @@ function render(svg,layer,L,states,o={}){
   // Gleise
   L.leaves.forEach(li=>{const nd=T.nodes[li],c=nd.color,cnt=(o.counts||{})[li]||0,bad=o.bad===li;
     parts.push(`<g class="bin${bad?' bad':''}" transform="translate(${nd.x},${nd.y})">
-      <rect class="box" x="-29" y="0" width="58" height="46" rx="8" style="fill:var(--c${c});fill-opacity:.16;stroke:var(--c${c})"/>
+      <rect class="box" x="${-L.binW/2}" y="0" width="${L.binW}" height="46" rx="8" style="fill:var(--c${c});fill-opacity:.16;stroke:var(--c${c})"/>
       <g transform="translate(0,23)">${shape(COLORS[c].shape,11,`fill:var(--c${c})`)}</g>
-      ${cnt?`<text class="cnt" x="22" y="-6" text-anchor="middle">${cnt}</text>`:''}
+      ${cnt?`<text class="cnt" x="${L.binW/2-7}" y="-6" text-anchor="middle">${cnt}</text>`:''}
       <text class="gl" text-anchor="middle" y="64">GL ${nd.gl}</text></g>`)});
   // Weichen
   L.internals.forEach(i=>{const nd=T.nodes[i],ff=nd.kind==='T',d=states[i];
@@ -339,8 +396,8 @@ function render(svg,layer,L,states,o={}){
 }
 
 /* ---------- Bildschirme ---------- */
-const screens=['menu','levels','game'];
-function show(id){screens.forEach(s=>$('#'+s).hidden=s!==id);if(id==='menu')renderMenu();if(id==='levels')renderLevels()}
+const screens=['menu','levels','game','feedback'];
+function show(id){screens.forEach(s=>$('#'+s).hidden=s!==id);if(id==='menu')renderMenu();if(id==='levels')renderLevels();if(id==='feedback')renderFeedback()}
 document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.go)));
 function starsOf(n){return '★'.repeat(n)+'☆'.repeat(3-n)}
 function totalStars(){return Object.values(P.stars).reduce((a,b)=>a+b,0)}
@@ -350,7 +407,8 @@ function renderMenu(){
   $('#starTotal').textContent=totalStars()+' / '+LEVELS.length*3+' ★';
   const key=todayKey(),d=P.daily[key];
   $('#dailyLabel').textContent=(d&&d.done?'gelöst · ':'')+key.split('-').reverse().join('.');
-  const L=levelData(9),hs=$('#heroSvg');
+  $('#foot').textContent='Prototyp '+VERSION+' · 20 Level · Fortschritt bleibt in diesem Browser gespeichert'+(CONFIG.goatcounter?' · anonyme Nutzungsstatistik ohne Cookies':'');
+  const L=levelData(9),hs=$('#heroSvg');layout(L,0,0);
   hs.innerHTML='<g></g>';
   const sol=L.sols[0];
   render(hs,hs.firstChild,L,sol,{lit:routeOf(L,sol)});
@@ -367,6 +425,7 @@ function renderLevels(){
 $('#btnContinue').addEventListener('click',()=>startLevel(Math.min(P.unlocked,LEVELS.length)));
 $('#btnLevels').addEventListener('click',()=>show('levels'));
 $('#btnDaily').addEventListener('click',()=>startDaily());
+$('#btnFeedback').addEventListener('click',()=>show('feedback'));
 $('#btnBack').addEventListener('click',()=>{cancelRun();show('menu')});
 
 /* ---------- Spielzustand ---------- */
@@ -385,13 +444,16 @@ function begin(g){
   const tip=G.mode==='level'?TIPS[G.idx]:null;
   $('#gTip').hidden=!tip;$('#gTip').textContent=tip||'';
   $('#overlay').hidden=true;tok.innerHTML='';
+  G.id=G.mode==='daily'?'daily':'L'+String(G.idx).padStart(2,'0');
   show('game');
   if(G.mode==='daily'&&P.daily[G.key]&&P.daily[G.key].done){showWin(true);}
+  else{lvStat(G.id).starts++;track('start/'+G.id);save()}
   setStatus('Stelle die Weichen und drücke <b>Start</b>.');
   refresh();
 }
 function refresh(){
-  const L=G.L;
+  const L=G.L,bd=svg.parentNode;
+  layout(L,bd.clientWidth,bd.clientHeight);
   const lit=G.running?G.lit:routeOf(L,G.states);
   render(svg,layer,L,G.states,{lit,interactive:!G.running,hint:G.hint,bad:G.bad,counts:G.counts,flip:G.flip});
   $('#gAttempt').textContent='Versuch '+Math.max(1,G.attempts+(G.running?0:1));
@@ -428,6 +490,7 @@ async function run(){
   const L=G.L,T=L.T,my=++runId;
   if(G.results.length){G.results=[];G.counts={};G.bad=null}
   G.planned=G.states.slice();G.running=true;G.attempts++;G.hint=null;G.flip=null;
+  lvStat(G.id).runs++;
   const row=[];
   for(let p=0;p<L.n;p++){
     G.cur=p;G.lit=routeOf(L,G.states);refresh();
@@ -454,6 +517,7 @@ async function run(){
       for(let r=p+1;r<L.n;r++)row.push(EMOJI_NO);
       G.rows.push(row.join(''));
       G.running=false;G.bad=i;G.cur=-1;G.states=G.planned.slice();buzz([30,40,30]);refresh();
+      lvStat(G.id).fails++;track('fail/'+G.id);save();
       setStatus(`<b>Paket ${p+1} (${COLORS[c].name}) ist auf Gleis ${b.gl} gelandet.</b> Die Stellung ist zurückgesetzt. Stelle um und starte neu.`,true);
       return;
     }
@@ -465,7 +529,9 @@ async function run(){
 }
 function calcStars(){let s=G.attempts===1?3:G.attempts<=3?2:1;if(G.hints)s--;return Math.max(1,s)}
 function win(){
-  const s=calcStars();
+  const s=calcStars(),st=lvStat(G.id);
+  st.won++;if(st.firstTry===null)st.firstTry=G.attempts;
+  track('win/'+G.id);if(G.attempts===1&&!G.hints)track('perfect/'+G.id);
   if(G.mode==='level'){
     P.stars[G.idx]=Math.max(P.stars[G.idx]||0,s);
     if(G.idx===P.unlocked&&P.unlocked<LEVELS.length)P.unlocked++;
@@ -491,15 +557,13 @@ function showWin(fromStore){
     const date=G.key.split('-').reverse().join('.');
     const text=`Weiche · Tagesrätsel ${date}\n${'⭐'.repeat(s)} · ${attempts} ${attempts===1?'Versuch':'Versuche'}\n${rows.join('\n')}`;
     share.hidden=false;share.textContent=text;
-    add('Ergebnis kopieren','primary',()=>{
-      const done=()=>{copied.hidden=false;copied.textContent='Kopiert. Du kannst es jetzt teilen.'};
-      const fail=()=>{const rg=document.createRange();rg.selectNodeContents(share);const sel=getSelection();sel.removeAllRanges();sel.addRange(rg);copied.hidden=false;copied.textContent='Text markiert. Kopiere ihn mit deinem Gerät.'};
-      try{navigator.clipboard.writeText(text).then(done,fail)}catch(e){fail()}});
+    add('Ergebnis kopieren','primary',()=>{copyText(text,share,copied,'Kopiert. Du kannst es jetzt teilen.');track('share/daily')});
     add('Zum Menü','',()=>show('menu'));
   }else{
     share.hidden=true;
     if(G.idx<LEVELS.length)add('Nächstes Level','primary',()=>startLevel(G.idx+1));
     else{const p=document.createElement('p');p.textContent='Du hast alle 20 Level des Prototyps gelöst.';btns.appendChild(p)}
+    if(G.idx===10||G.idx===LEVELS.length)add('5 Fragen beantworten','',()=>show('feedback'));
     add('Nochmal spielen','',()=>startLevel(G.idx));
     add('Levelauswahl','',()=>show('levels'));
   }
@@ -522,10 +586,42 @@ $('#btnHint').addEventListener('click',()=>{
   L.sols.forEach(s=>{const d=L.internals.filter(i=>s[i]!==G.states[i]);if(d.length<bd){bd=d.length;best=d}});
   if(!bd){setStatus('<b>Deine Stellung ist richtig.</b> Drücke Start.');return}
   G.hints++;G.hint=best[0];refresh();
+  lvStat(G.id).hints++;track('hint/'+G.id);save();
   const nd=L.T.nodes[best[0]];
   setStatus(`Tipp: Stelle <b>${nd.label}</b> um.`+(nd.kind==='T'?' Beim Flipflop zählt die Startrichtung.':''));
 });
 
+/* ---------- Feedback ---------- */
+const QUESTIONS=[
+  {id:'spass',q:'1. Wie viel Spaß macht dir das Spiel?',label:'Spaß',opts:['1','2','3','4','5'],scale:['gar keinen','sehr viel']},
+  {id:'flipflop',q:'2. Wie verständlich war der Flipflop?',label:'Flipflop verständlich',opts:['1','2','3','4','5'],scale:['unklar','sofort klar']},
+  {id:'schwer',q:'3. Wie findest du die Schwierigkeit?',label:'Schwierigkeit',opts:['zu leicht','genau richtig','zu schwer']},
+  {id:'app',q:'4. Würdest du das Spiel als App installieren?',label:'Als App installieren',opts:['ja','vielleicht','nein']}];
+let fbBuilt=false;
+function renderFeedback(){
+  if(fbBuilt)return;fbBuilt=true;
+  $('#fbQs').innerHTML=QUESTIONS.map(Q=>`<fieldset><legend>${Q.q}</legend><div class="opts">${Q.opts.map((o,j)=>`<label class="chip"><input type="radio" name="fb-${Q.id}" id="fb-${Q.id}-${j}" value="${o}"><span>${o}</span></label>`).join('')}</div>${Q.scale?`<div class="scale"><span>1 = ${Q.scale[0]}</span><span>5 = ${Q.scale[1]}</span></div>`:''}</fieldset>`).join('');
+}
+function statsText(){
+  const lines=Object.keys(S.levels).sort().map(id=>{const t=S.levels[id];return `${id} ${t.runs}/${t.fails}/${t.hints}${t.won?'':' offen'}`});
+  const ua=navigator.userAgent,dev=/Android/i.test(ua)?'Android':/iPhone|iPad|iPod/i.test(ua)?'iOS':'Desktop';
+  return `Gelöst: ${Object.keys(P.stars).length} von ${LEVELS.length} Leveln · Sterne: ${totalStars()}\nSpieltage: ${S.days.length} · erster Tag: ${S.first}\nGerät: ${dev}, ${innerWidth}×${innerHeight}\nJe Level (Versuche/Fehlversuche/Tipps):\n${lines.join(', ')||'noch keine Daten'}`;
+}
+$('#fbForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const fd=new FormData(e.target),miss=QUESTIONS.filter(Q=>!fd.get('fb-'+Q.id)),err=$('#fbErr');
+  if(miss.length){err.textContent='Bitte beantworte noch Frage '+miss.map(Q=>Q.q[0]).join(', ')+'.';return}
+  err.textContent='';
+  const text=`Weiche · Feedback (Prototyp ${VERSION})\n`+QUESTIONS.map((Q,j)=>`${j+1}. ${Q.label}: ${fd.get('fb-'+Q.id)}${Q.scale?'/5':''}`).join('\n')
+    +`\n5. Anmerkung: ${$('#fbText').value.trim()||'–'}\n\n— Spielstand —\n${statsText()}`;
+  const out=$('#fbOut');out.hidden=false;out.textContent=text;
+  copyText(text,out,$('#fbCopied'),'Kopiert. Schick den Text jetzt an die Person, die dir das Spiel gezeigt hat.');
+  track('feedback/copied');
+});
+
+let rz=0;
+addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(G&&!$('#game').hidden)refresh()},120)});
+visit();
 show('menu');
 window.__weiche={levelData,dailyData,LEVELS,simulate};
 })();
