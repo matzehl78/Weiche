@@ -13,7 +13,7 @@ Spiel-Link für Profil und Kommentare: https://matzehl78.github.io/Weiche/
 | Text | Eine Zeile oben im Bild, groß, maximal 8 Wörter |
 | Ende | Clip endet kurz vor oder genau mit der Auflösung, damit er als Schleife läuft |
 | Ton | Originalton der Bildschirmaufnahme oder ruhige, lizenzfreie Musik aus der Plattform-Bibliothek |
-| Aufnahme | Bildschirmaufnahme am Handy. Tempo im Spiel auf 2× stellen. |
+| Aufnahme | Automatisch mit `node tools/clips.js` (1080×1920, MP4, ohne Ton) oder als Bildschirmaufnahme am Handy mit Tempo 2× |
 | Einer für alle | Denselben Clip auf allen drei Plattformen hochladen |
 
 ## Die drei Hook-Typen im Test
@@ -30,16 +30,18 @@ Spiel-Link für Profil und Kommentare: https://matzehl78.github.io/Weiche/
 |---|---|---|---|---|
 | 1 | A | „Schaffst du das im ersten Versuch?" | Level kurz zeigen, 3 Sekunden Standbild zum Nachdenken, dann Start und Auflösung | 7 |
 | 2 | A | „Wohin fährt das letzte Paket?" | Start drücken, kurz vor dem letzten Paket einfrieren, dann auflösen | 9 |
-| 3 | A | „Nur 1 von 10 sieht den Fehler" | Falsche Stellung zeigen, Start, das Paket landet falsch | 6 |
-| 4 | B | „Ich war so sicher …" | Selbstbewusst starten, das vorletzte Paket landet falsch, roter Rahmen | 12 |
+| 3 | A | „Nur 1 von 10 sieht den Fehler" | Falsche Stellung zeigen, Start, das Paket landet falsch | 18 |
+| 4 | B | „Ich war so sicher …" | Selbstbewusst starten, das vorletzte Paket landet falsch, roter Rahmen | 20 |
 | 5 | B | „Level 20 hat mich 9 Versuche gekostet" | Schneller Zusammenschnitt von Fehlversuchen, am Ende die Lösung | 20 |
-| 6 | B | „Dieser eine Flipflop ruiniert alles" | Nahaufnahme: Flipflop schaltet um, Paket fährt falsch | 10 |
+| 6 | B | „Dieser eine Flipflop ruiniert alles" | Nahaufnahme: Flipflop schaltet um, Paket fährt falsch | 20 |
 | 7 | C | „Ich baue ein Spiel ohne programmieren zu können" | Level 1 → Level 20 im Schnelldurchlauf, dazu 2 Sätze Text | 1, 20 |
 | 8 | C | „Tag 1 meines Spiels: Was fehlt?" | 10 Sekunden Gameplay, Frage an die Zuschauer | 5 |
 | 9 | C | „Ich programmiere Steuerungen. Jetzt als Spiel." | Gameplay mit leuchtender Fahrstraße, Bezug zur Steuerungstechnik | 8 |
 | 10 | A | „Level 1 gegen Level 20" | Geteilter Vergleich: erst das einfache, dann das große Level | 1, 20 |
 | 11 | A | „Das Tagesrätsel von heute" | Tagesrätsel lösen, am Ende das Emoji-Ergebnis zeigen | Tagesrätsel |
-| 12 | B | „Sag mir, was ich falsch mache" | Zwei Fehlversuche hintereinander, Clip endet ohne Lösung | 14 |
+| 12 | B | „Sag mir, was ich falsch mache" | Zwei Fehlversuche hintereinander, Clip endet ohne Lösung | 18 |
+
+Für die Clips mit Fehlversuch eignen sich nur Level 18 und 20: In allen anderen Leveln scheitert eine falsche Stellung schon beim ersten oder zweiten Paket.
 
 Clip 12 endet bewusst ohne Auflösung. Solche Clips bekommen oft die meisten Kommentare, weil Zuschauer die Lösung schreiben wollen.
 
