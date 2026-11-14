@@ -3,7 +3,7 @@ name: Spiel auf GitHub Pages veröffentlichen
 on:
   push:
     branches: [main]
-    paths: ['web/**', '.github/workflows/pages.yml']
+    paths: ['src/**', 'static/**', 'tools/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:
@@ -23,9 +23,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Seite bauen
+        run: python3 tools/build.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: web
+          path: dist
       - id: deployment
         uses: actions/deploy-pages@v4

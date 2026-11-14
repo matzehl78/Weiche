@@ -1,10 +1,5 @@
-<!doctype html>
-<html lang="de">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}</style>
 <title>Weiche</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
@@ -49,6 +44,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);ou
 .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .btn.primary small{color:var(--accent-ink);opacity:.75}
 .foot{color:var(--muted);font-size:12px;letter-spacing:.04em}
+.foot a{color:var(--muted)}
 
 /* ---------- Levelauswahl ---------- */
 .bar{display:flex;align-items:center;gap:10px;min-height:44px}
@@ -142,8 +138,6 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);ou
 .fb .err{color:var(--bad);font-size:13px;min-height:1.2em;margin:0}
 @media (max-width:380px){.grid{grid-template-columns:repeat(4,1fr)}.ctl{font-size:13px}}
 </style>
-</head>
-<body>
 
 <div id="app">
   <section id="menu" class="screen">
@@ -159,7 +153,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);ou
       <button class="btn" id="btnDaily"><span>Tagesrätsel</span><small id="dailyLabel"></small></button>
       <button class="btn" id="btnFeedback"><span>Feedback geben</span><small>5 kurze Fragen</small></button>
     </div>
-    <div class="foot" id="foot"></div>
+    <div class="foot"><span id="foot"></span> · <a href="https://matzehl78.github.io/Weiche/datenschutz.html" target="_blank" rel="noopener">Datenschutz</a></div>
   </section>
 
   <section id="feedback" class="screen" hidden>
@@ -626,5 +620,3 @@ show('menu');
 window.__weiche={levelData,dailyData,LEVELS,simulate};
 })();
 </script>
-</body>
-</html>

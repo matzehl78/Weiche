@@ -1,0 +1,408 @@
+<title>50 Hertz</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: Leitwarte – Frequenzanzeige klebt oben, darunter Verlauf, Stellhebel und Ausbau-Liste */
+:root{
+  --panel:#1b2225; --panel-2:#232c30; --panel-3:#2f3a40; --frame:#3a474e; --grid:#33404680;
+  --ink:#e8eef0; --muted:#8fa0a6; --accent:#f0b13e; --accent-ink:#231a06;
+  --ok:#6fd08c; --warn:#f0b13e; --bad:#ff6a57;
+  --coal:#8d99a0; --gas:#f0935a; --pv:#f7d23e; --wind:#3fd0df; --bat:#6fd08c; --load:#ffffff;
+  --f-display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --f-body:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--panel);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.4;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--muted)}
+#app{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:12px;padding-block:12px 28px}
+.num{font-family:var(--f-display);font-variant-numeric:tabular-nums}
+
+.top{display:flex;align-items:center;gap:10px}
+.brand{flex:1;min-width:0}
+.brand b{display:block;font-family:var(--f-display);font-weight:700;font-size:26px;letter-spacing:.08em;line-height:1}
+.brand span{font-size:12px;color:var(--muted)}
+.money{text-align:right}
+.money b{display:block;font-family:var(--f-display);font-weight:700;font-size:24px;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.money span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pill{padding:8px 10px;border-radius:9px;background:var(--panel-3);border:1px solid var(--frame);font-weight:600;font-size:13px;min-width:42px}
+
+.freq{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel-2);border:1px solid var(--frame);border-radius:14px;
+  padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center;box-shadow:0 6px 0 var(--panel)}
+.fnum{display:flex;align-items:baseline;gap:6px}
+.fnum b{font-family:var(--f-display);font-weight:700;font-size:46px;line-height:.9;font-variant-numeric:tabular-nums;color:var(--ok)}
+.fnum span{font-family:var(--f-display);font-weight:600;color:var(--muted);font-size:18px}
+.freq.warn .fnum b{color:var(--warn)} .freq.bad .fnum b{color:var(--bad)}
+.gauge{position:relative;height:22px;border-radius:6px;background:linear-gradient(90deg,var(--bad) 0 25%,var(--warn) 25% 40%,var(--ok) 40% 60%,var(--warn) 60% 75%,var(--bad) 75% 100%);opacity:.9}
+.gauge i{position:absolute;top:-4px;bottom:-4px;width:4px;margin-left:-2px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--panel-2)}
+.ticks{grid-column:2;display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+#fState{grid-column:1/-1;font-size:13px;color:var(--muted);min-height:1.4em}
+#fState b{color:var(--ink)}
+
+.tip{margin:0;padding:12px;border-radius:10px;background:var(--panel-3);border-left:3px solid var(--accent);display:flex;gap:12px;align-items:flex-start}
+.tip p{margin:0;flex:1}
+.tip button{font-weight:600;color:var(--accent);padding:2px 4px}
+
+.card{background:var(--panel-2);border:1px solid var(--frame);border-radius:14px;padding:14px;display:grid;gap:10px;min-width:0}
+.card h2{margin:0;font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+canvas{width:100%;height:170px;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;background:var(--c);vertical-align:-1px}
+.balance{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.balance div{background:var(--panel);border-radius:9px;padding:8px 10px;min-width:0}
+.balance span{display:block;font-size:11px;color:var(--muted);letter-spacing:.04em}
+.balance b{font-family:var(--f-display);font-weight:600;font-size:20px;font-variant-numeric:tabular-nums}
+
+.lever{display:grid;gap:4px}
+.lever .head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.lever .head b{font-weight:600}
+.lever .head b::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;background:var(--c)}
+.lever .head span{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.lever .sub{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}
+.lever label.auto{display:flex;align-items:center;gap:6px;color:var(--ink)}
+input[type=range]{width:100%;height:32px;margin:0;accent-color:var(--accent)}
+.soc{height:10px;border-radius:5px;background:var(--panel);overflow:hidden}
+.soc i{display:block;height:100%;background:var(--bat);width:0}
+.shed{padding:12px;border-radius:10px;background:var(--panel-3);border:1px solid var(--bad);color:var(--ink);font-weight:600}
+.shed[disabled]{opacity:.45;cursor:default;border-color:var(--frame)}
+
+#shop{display:grid;gap:8px}
+.item{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;text-align:left;padding:12px;border-radius:10px;background:var(--panel-3);border:1px solid var(--frame);width:100%}
+.item b{font-weight:600}
+.item small{grid-column:1;color:var(--muted);font-size:13px}
+.item .warnline{color:var(--warn)}
+.item .cost{grid-row:1/span 2;grid-column:2;font-family:var(--f-display);font-weight:700;font-size:20px;color:var(--accent);font-variant-numeric:tabular-nums}
+.item[disabled]{opacity:.5;cursor:default}
+.item.own{opacity:.6;border-style:dashed}
+.item.own .cost{color:var(--ok);font-size:15px}
+.item.can{border-color:var(--accent)}
+.foot{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted)}
+.foot button{color:var(--muted);text-decoration:underline;padding:0}
+</style>
+
+<div id="app">
+  <header class="top">
+    <div class="brand"><b>50 HERTZ</b><span id="clock"></span></div>
+    <div class="money"><b id="credits">0</b><span id="rate"></span></div>
+    <button class="pill" id="btnSpeed" aria-label="Tempo">×1</button>
+    <button class="pill" id="btnLang" aria-label="Sprache / Language">EN</button>
+  </header>
+
+  <section class="freq" id="freq" aria-live="off">
+    <div class="fnum"><b id="fVal">50,00</b><span>Hz</span></div>
+    <div class="gauge" role="img" aria-label="Frequenzanzeige 49 bis 51 Hertz"><i id="needle" style="left:50%"></i></div>
+    <div class="ticks"><span>49,0</span><span>49,8</span><span>50,2</span><span>51,0</span></div>
+    <div id="fState"></div>
+  </section>
+
+  <div class="tip" id="tip" hidden><p id="tipText"></p><button id="tipOk">OK</button></div>
+
+  <section class="card">
+    <h2 id="hChart"></h2>
+    <canvas id="chart" role="img" aria-label="Last und Erzeugung"></canvas>
+    <div class="legend" id="legend"></div>
+    <div class="balance">
+      <div><span id="lLoad"></span><b id="vLoad">0</b></div>
+      <div><span id="lGen"></span><b id="vGen">0</b></div>
+      <div><span id="lBand"></span><b id="vBand">0 %</b></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 id="hCtl"></h2>
+    <div class="lever" style="--c:var(--gas)">
+      <div class="head"><b id="nGas"></b><span id="vGas"></span></div>
+      <input type="range" id="sGas" min="0" max="120" step="1" value="40" aria-labelledby="nGas">
+      <div class="sub"><span id="dGas"></span><label class="auto" id="aGasWrap" hidden><input type="checkbox" id="aGas"><span id="aGasL"></span></label></div>
+    </div>
+    <div class="lever" style="--c:var(--coal)">
+      <div class="head"><b id="nCoal"></b><span id="vCoal"></span></div>
+      <input type="range" id="sCoal" min="0" max="300" step="1" value="220" aria-labelledby="nCoal">
+      <div class="sub"><span id="dCoal"></span><label class="auto" id="aCoalWrap" hidden><input type="checkbox" id="aCoal"><span id="aCoalL"></span></label></div>
+    </div>
+    <div class="lever" id="batRow" style="--c:var(--bat)" hidden>
+      <div class="head"><b id="nBat"></b><span id="vBat"></span></div>
+      <div class="soc"><i id="socBar"></i></div>
+    </div>
+    <button class="shed" id="btnShed"></button>
+  </section>
+
+  <section class="card">
+    <h2 id="hShop"></h2>
+    <div id="shop"></div>
+  </section>
+
+  <div class="foot"><span id="footV"></span><a id="privacy" href="https://matzehl78.github.io/Weiche/datenschutz.html" target="_blank" rel="noopener"></a><button id="btnReset"></button></div>
+</div>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const VERSION='v0.1',STORE='hertz50.v1',DAY=240; // Sekunden pro Spieltag
+const CONFIG={goatcounter:'weiche'}; // anonyme Statistik ohne Cookies; leer = aus
+
+/* ---------- Texte ---------- */
+const TXT={
+de:{dec:',',day:'Tag',perS:'/s',chart:'Verlauf',ctl:'Kraftwerke',shop:'Ausbau',
+  load:'Last',gen:'Erzeugung',band:'Im Band heute',lgLoad:'Last',lgCoal:'Kohle',lgGas:'Gas',lgWind:'Wind',lgPv:'Solar',lgBat:'Batterie',
+  gas:'Gaskraftwerk',coal:'Kohlekraftwerk',bat:'Batteriespeicher',gasD:'schnell, teuer',coalD:'träge, günstig',
+  setIs:(s,i)=>`Soll ${s} · Ist ${i} MW`,auto:'Automatik',batV:(p,e,c)=>`${p>0?'+':''}${p} MW · ${e} von ${c} MWh`,
+  shed:'Lastabwurf (Notfall): 20 % der Last für 15 s abschalten',shedOn:s=>`Lastabwurf aktiv, noch ${s} s`,shedCd:s=>`Lastabwurf wieder bereit in ${s} s`,
+  ok:'<b>Stabil.</b> Du verdienst voll.',low:'<b>Frequenz zu niedrig:</b> Es fehlt Erzeugung. Gas hochfahren.',high:'<b>Frequenz zu hoch:</b> Zu viel Erzeugung. Kraftwerke drosseln.',
+  crit:'<b>Kritisch.</b> Keine Einnahmen, Blackout droht.',black:s=>`<b>Blackout.</b> Das Netz fährt wieder hoch, noch ${s} s.`,curt:' Wind und Solar werden abgeregelt.',
+  tip:'Halte die Netzfrequenz bei 50 Hz. Fällt sie, fehlt Erzeugung: Gas reagiert schnell, Kohle langsam. Im grünen Band verdienst du Geld und kannst das Netz ausbauen.',
+  offline:(c,m)=>`Während du ${m} min weg warst, hat der Sekundärregler ${c} Credits verdient.`,
+  own:'aktiv',peakWarn:'Achtung: Die Abendspitze übersteigt dann deine gesicherte Leistung.',
+  foot:'Prototyp '+VERSION+' · anonyme Nutzungsstatistik ohne Cookies',privacy:'Datenschutz',reset:'Spielstand löschen',reset2:'Wirklich löschen? Nochmal tippen',
+  items:{autoGas:['Sekundärregler','Regelt Gas automatisch nach und führt die Kohle nach, wenn Gas am Anschlag ist. Ab jetzt läuft das Netz auch ohne dich.'],
+    gas:['Gasturbine +50 MW','Schnell regelbar, teurer Brennstoff.'],cust:['Neue Kunden +12 %','Mehr Last, mehr Einnahmen.'],
+    wind:['Windpark +60 MW','Kostenloser Strom, schwankt mit dem Wetter.'],pv:['Solarpark +60 MW','Kostenloser Strom am Tag, nachts nichts.'],
+    bat:['Batteriespeicher +20 MW / 30 MWh','Gleicht Abweichungen sofort aus, solange er Ladung hat.'],forecast:['Lastprognose','Zeigt im Verlauf die nächsten 6 Stunden.'],
+    coal:['Kohleblock +100 MW','Günstige Grundlast, reagiert träge.'],inertia:['Schwungmasse +25 %','Die Frequenz reagiert langsamer auf Abweichungen.'],
+    autoCoal:['Fahrplan-Automatik','Fährt die Kohle nach der Prognose vor.']}},
+en:{dec:'.',day:'Day',perS:'/s',chart:'Timeline',ctl:'Power plants',shop:'Expansion',
+  load:'Load',gen:'Generation',band:'In band today',lgLoad:'Load',lgCoal:'Coal',lgGas:'Gas',lgWind:'Wind',lgPv:'Solar',lgBat:'Battery',
+  gas:'Gas plant',coal:'Coal plant',bat:'Battery storage',gasD:'fast, expensive',coalD:'slow, cheap',
+  setIs:(s,i)=>`Target ${s} · actual ${i} MW`,auto:'Automatic',batV:(p,e,c)=>`${p>0?'+':''}${p} MW · ${e} of ${c} MWh`,
+  shed:'Load shedding (emergency): cut 20% of load for 15 s',shedOn:s=>`Load shedding active, ${s} s left`,shedCd:s=>`Load shedding ready again in ${s} s`,
+  ok:'<b>Stable.</b> You earn at full rate.',low:'<b>Frequency too low:</b> Not enough generation. Ramp up gas.',high:'<b>Frequency too high:</b> Too much generation. Throttle the plants.',
+  crit:'<b>Critical.</b> No income, blackout imminent.',black:s=>`<b>Blackout.</b> The grid is restarting, ${s} s left.`,curt:' Wind and solar are being curtailed.',
+  tip:'Keep the grid frequency at 50 Hz. If it drops, generation is missing: gas reacts fast, coal slowly. Inside the green band you earn money to expand the grid.',
+  offline:(c,m)=>`While you were away for ${m} min, the secondary controller earned ${c} credits.`,
+  own:'active',peakWarn:'Careful: the evening peak will then exceed your firm capacity.',
+  foot:'Prototype '+VERSION+' · anonymous usage statistics, no cookies',privacy:'Privacy (German)',reset:'Delete save',reset2:'Really delete? Tap again',
+  items:{autoGas:['Secondary controller','Adjusts gas automatically and trims coal when gas hits its limit. From now on the grid runs without you.'],
+    gas:['Gas turbine +50 MW','Fast to regulate, expensive fuel.'],cust:['New customers +12%','More load, more income.'],
+    wind:['Wind farm +60 MW','Free power, varies with the weather.'],pv:['Solar farm +60 MW','Free power by day, nothing at night.'],
+    bat:['Battery storage +20 MW / 30 MWh','Balances deviations instantly while it has charge.'],forecast:['Load forecast','Shows the next 6 hours in the timeline.'],
+    coal:['Coal unit +100 MW','Cheap base load, reacts slowly.'],inertia:['Inertia +25%','Frequency reacts more slowly to imbalances.'],
+    autoCoal:['Schedule automation','Ramps coal ahead of the forecast.']}}};
+
+/* ---------- Zustand ---------- */
+function fresh(){return {T:6,f:50,coal:220,coalSet:220,gas:48,gasSet:48,soc:0,credits:0,cust:1,M:125,
+  cap:{coal:300,gas:120,pv:0,wind:0,batP:0,batE:0},n:{},autoGas:true,autoCoal:true,
+  shed:0,shedCd:0,black:0,inBand:0,dayTot:0,dayNo:1,earned:0,played:0,rate:0,
+  lang:(navigator.language||'de').toLowerCase().startsWith('de')?'de':'en',tipSeen:false,first:today(),days:[],marks:[],last:Date.now()}}
+function today(){const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
+let S;
+try{S=Object.assign(fresh(),JSON.parse(localStorage.getItem(STORE))||{})}catch(e){S=fresh()}
+function save(){S.last=Date.now();try{localStorage.setItem(STORE,JSON.stringify(S))}catch(e){}}
+let t=TXT[S.lang],speed=1,hist=[],lastP={load:0,gen:0,bat:0,cur:0,dP:0};
+
+function track(ev){
+  if(!CONFIG.goatcounter)return;
+  try{new Image().src='https://'+CONFIG.goatcounter+'.goatcounter.com/count?p='+encodeURIComponent('/ev/50hz/'+ev)+'&t='+encodeURIComponent('50hz '+ev)+'&e=true&rnd='+Math.random().toString(36).slice(2)}catch(e){}
+}
+(function visit(){const k=today();if(S.days.includes(k))return;S.days.push(k);const n=S.days.length;
+  track(n===1?'visit/first':'visit/day-'+Math.min(n,7));
+  if(n>1&&Math.round((new Date(k)-new Date(S.first))/864e5)===1)track('visit/next-day')})();
+
+/* ---------- Modell ---------- */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const bump=(h,m,s)=>{let d=Math.abs(h-m);d=Math.min(d,24-d);return Math.exp(-d*d/(2*s*s))};
+function demand(T){const h=T%24,b=0.55+0.18*bump(h,8,2.2)+0.30*bump(h,19,2.6)+0.12*bump(h,13,3.5);
+  return 400*S.cust*b*(1+0.025*Math.sin(T*8.97+1.3)+0.02*Math.sin(T*27.3+0.4))}
+function sun(T){const h=T%24,e=Math.max(0,Math.sin(Math.PI*(h-6)/12));
+  return Math.pow(e,1.3)*clamp(0.72+0.3*Math.sin(T*0.83+2.1)*Math.sin(T*2.9+0.7),0.25,1)}
+function wind(T){return clamp(0.45+0.3*Math.sin(T*0.7+0.9)+0.2*Math.sin(T*2.03+2.2),0.05,1)}
+const peakLoad=()=>400*S.cust*0.9*1.045;
+const firm=()=>S.cap.coal+S.cap.gas+S.cap.batP;
+
+function step(dt){
+  const dh=dt*24/DAY,day0=Math.floor(S.T/24);
+  S.T+=dh;S.played+=dt/speed;
+  if(Math.floor(S.T/24)!==day0){S.dayNo++;S.inBand=0;S.dayTot=0}
+  S.shed=Math.max(0,S.shed-dt);S.shedCd=Math.max(0,S.shedCd-dt);
+  const L=demand(S.T)*(S.shed>0?0.8:1);
+  if(S.black>0){
+    S.black-=dt;S.dayTot+=dt;
+    if(S.black<=0){S.f=50;const need=L-S.cap.pv*sun(S.T)-S.cap.wind*wind(S.T);
+      S.coal=S.coalSet=clamp(need*0.8,0,S.cap.coal);S.gas=S.gasSet=clamp(need-S.coal,0,S.cap.gas)}
+    lastP={load:L,gen:0,bat:0,cur:0,dP:0,pv:0,wd:0};return;
+  }
+  if(S.n.autoCoal&&S.autoCoal){const Tf=S.T+1.5;
+    S.coalSet=clamp(demand(Tf)-S.cap.pv*sun(Tf)-S.cap.wind*wind(Tf)-0.35*S.cap.gas,0,S.cap.coal)}
+  if(S.n.autoGas&&S.autoGas){
+    const socTerm=S.cap.batE>0?(0.5-S.soc/S.cap.batE)*25:0;
+    S.gasSet=clamp(S.gasSet+(-(S.f-50)*130+socTerm+(lastP.bat||0)*0.8)*dt,0,S.cap.gas); // Batterie-Leistung zählt als Regelabweichung
+    // Gas am Anschlag: Kohle langsam nachführen
+    if(!(S.n.autoCoal&&S.autoCoal)){
+      if(S.gasSet<S.cap.gas*0.08&&S.f>50.02)S.coalSet=Math.max(0,S.coalSet-S.cap.coal*0.02*dt);
+      else if(S.gasSet>S.cap.gas*0.92&&S.f<49.98)S.coalSet=Math.min(S.cap.coal,S.coalSet+S.cap.coal*0.02*dt);
+    }}
+  const rc=S.cap.coal*0.15*dh,rg=S.cap.gas*1.5*dh;
+  S.coal+=clamp(S.coalSet-S.coal,-rc,rc);S.gas+=clamp(S.gasSet-S.gas,-rg,rg);
+  const cur=clamp((S.f-50.04)/0.12,0,1); // Abregelung von Wind und Solar bei Überschuss
+  const pv=S.cap.pv*sun(S.T)*(1-cur),wd=S.cap.wind*wind(S.T)*(1-cur);
+  let gen=S.coal+S.gas+pv+wd,bat=0;
+  if(S.cap.batP>0){
+    bat=clamp(L-gen,-S.cap.batP,S.cap.batP);
+    bat=bat>0?Math.min(bat,S.soc/dh):Math.max(bat,-(S.cap.batE-S.soc)/dh);
+    S.soc=clamp(S.soc-bat*dh,0,S.cap.batE);gen+=bat;
+  }
+  const dP=gen-L;
+  S.f+=dt*(dP/S.M-0.8*(S.f-50));
+  const df=Math.abs(S.f-50);
+  if(df>1){S.black=12;track('blackout');buzz([60,60,60]);return}
+  const stab=df<=0.2?1:df<=0.5?0.4:0;
+  const net=L*0.02*stab-(S.coal*0.006+S.gas*0.012);
+  S.credits=Math.max(0,S.credits+net*dt);if(net>0)S.earned+=net*dt;
+  S.rate+=(net-S.rate)*Math.min(1,dt*0.8);
+  S.dayTot+=dt;if(stab===1)S.inBand+=dt;
+  lastP={load:L,gen,bat,cur,dP,pv,wd};
+}
+function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+
+/* ---------- Ausbau ---------- */
+const ITEMS=[
+  {id:'autoGas',once:1,cost:600},
+  {id:'gas',cost:300,g:1.35,ap:()=>S.cap.gas+=50},
+  {id:'cust',cost:350,g:1.5,ap:()=>S.cust*=1.12},
+  {id:'wind',cost:450,g:1.35,ap:()=>S.cap.wind+=60},
+  {id:'pv',cost:400,g:1.35,ap:()=>S.cap.pv+=60},
+  {id:'bat',cost:600,g:1.4,ap:()=>{S.cap.batP+=20;S.cap.batE+=30;S.soc+=15}},
+  {id:'forecast',once:1,cost:500},
+  {id:'coal',cost:500,g:1.4,ap:()=>S.cap.coal+=100},
+  {id:'inertia',cost:700,g:1.6,ap:()=>S.M*=1.25},
+  {id:'autoCoal',once:1,cost:1500}];
+const costOf=it=>Math.round(it.cost*Math.pow(it.g||1,S.n[it.id]||0)/10)*10;
+let shopSig='';
+function renderShop(force){
+  const sig=ITEMS.map(it=>(S.n[it.id]||0)+(S.credits>=costOf(it)?'y':'n')).join('')+S.lang;
+  if(sig===shopSig&&!force)return;shopSig=sig;
+  $('#shop').innerHTML=ITEMS.map(it=>{
+    const own=it.once&&S.n[it.id],c=costOf(it),can=!own&&S.credits>=c,[nm,ds]=t.items[it.id];
+    const warn=it.id==='cust'&&400*S.cust*1.12*0.9*1.045>firm()?`<small class="warnline">${t.peakWarn}</small>`:'';
+    const cnt=!it.once&&S.n[it.id]?` <span class="num">×${S.n[it.id]}</span>`:'';
+    return `<button class="item${own?' own':can?' can':''}" data-id="${it.id}" ${own||!can?'disabled':''}><b>${nm}${cnt}</b><span class="cost">${own?t.own:fmt(c)}</span><small>${ds}</small>${warn}</button>`}).join('');
+}
+$('#shop').addEventListener('click',e=>{
+  const b=e.target.closest('[data-id]');if(!b||b.disabled)return;
+  const it=ITEMS.find(i=>i.id===b.dataset.id),c=costOf(it);if(S.credits<c)return;
+  S.credits-=c;S.n[it.id]=(S.n[it.id]||0)+1;it.ap&&it.ap();
+  track('buy/'+it.id);buzz(10);syncControls();renderShop(true);save();
+});
+
+/* ---------- Anzeige ---------- */
+const fmt=n=>Math.round(n).toLocaleString(S.lang==='de'?'de-DE':'en-US');
+const f2=(v,d=2)=>v.toFixed(d).replace('.',t.dec);
+function applyLang(){
+  t=TXT[S.lang];document.documentElement.lang=S.lang;
+  $('#btnLang').textContent=S.lang==='de'?'EN':'DE';
+  $('#hChart').textContent=t.chart;$('#hCtl').textContent=t.ctl;$('#hShop').textContent=t.shop;
+  $('#lLoad').textContent=t.load+' MW';$('#lGen').textContent=t.gen+' MW';$('#lBand').textContent=t.band;
+  $('#nGas').textContent=t.gas;$('#nCoal').textContent=t.coal;$('#nBat').textContent=t.bat;
+  $('#dGas').textContent=t.gasD;$('#dCoal').textContent=t.coalD;$('#aGasL').textContent=t.auto;$('#aCoalL').textContent=t.auto;
+  $('#tipText').textContent=t.tip;$('#footV').textContent=t.foot;$('#privacy').textContent=t.privacy;$('#btnReset').textContent=t.reset;
+  document.querySelectorAll('.ticks span').forEach((s,i)=>s.textContent=f2([49,49.8,50.2,51][i],1));
+  $('#legend').innerHTML=[['load',t.lgLoad],['coal',t.lgCoal],['gas',t.lgGas],['wind',t.lgWind],['pv',t.lgPv],['bat',t.lgBat]].map(([c,l])=>`<span style="--c:var(--${c})">${l}</span>`).join('');
+  renderShop(true);
+}
+function syncControls(){
+  const sg=$('#sGas'),sc=$('#sCoal');
+  sg.max=S.cap.gas;sc.max=S.cap.coal;
+  $('#aGasWrap').hidden=!S.n.autoGas;$('#aCoalWrap').hidden=!S.n.autoCoal;
+  $('#aGas').checked=S.autoGas;$('#aCoal').checked=S.autoCoal;
+  sg.disabled=!!(S.n.autoGas&&S.autoGas);sc.disabled=!!(S.n.autoCoal&&S.autoCoal);
+  $('#batRow').hidden=!S.cap.batP;
+}
+$('#sGas').addEventListener('input',e=>{S.gasSet=+e.target.value});
+$('#sCoal').addEventListener('input',e=>{S.coalSet=+e.target.value});
+$('#aGas').addEventListener('change',e=>{S.autoGas=e.target.checked;syncControls()});
+$('#aCoal').addEventListener('change',e=>{S.autoCoal=e.target.checked;syncControls()});
+$('#btnShed').addEventListener('click',()=>{if(S.shedCd>0||S.black>0)return;S.shed=15;S.shedCd=75;track('shed');buzz(20)});
+$('#btnSpeed').addEventListener('click',()=>{speed=speed===1?3:1;$('#btnSpeed').textContent='×'+speed});
+$('#btnLang').addEventListener('click',()=>{S.lang=S.lang==='de'?'en':'de';applyLang();save()});
+$('#tipOk').addEventListener('click',()=>{$('#tip').hidden=true;S.tipSeen=true;save()});
+let resetArm=0;
+$('#btnReset').addEventListener('click',()=>{
+  if(Date.now()-resetArm<4000){const lang=S.lang;S=fresh();S.lang=lang;S.days=[today()];hist=[];save();applyLang();syncControls();$('#btnReset').textContent=t.reset;return}
+  resetArm=Date.now();$('#btnReset').textContent=t.reset2;setTimeout(()=>{$('#btnReset').textContent=t.reset},4000);
+});
+
+const css=getComputedStyle(document.documentElement),col=n=>css.getPropertyValue('--'+n).trim();
+const cv=$('#chart'),cx=cv.getContext('2d');
+function drawChart(){
+  const dpr=Math.min(2,devicePixelRatio||1),w=cv.clientWidth,h=cv.clientHeight;
+  if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr)}
+  cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,w,h);
+  const fc=!!S.n.forecast,T0=S.T-12,T1=S.T+(fc?6:1),pad=18;
+  const ymax=Math.ceil(Math.max(peakLoad(),S.cap.coal*0.6+S.cap.gas)*1.12/50)*50;
+  const X=T=>(T-T0)/(T1-T0)*w,Y=v=>h-pad-(v/ymax)*(h-pad-6);
+  cx.font='11px '+col('f-body');cx.fillStyle=col('muted');cx.strokeStyle=col('grid');cx.lineWidth=1;
+  for(let hh=Math.ceil(T0/6)*6;hh<=T1;hh+=6){const x=X(hh);cx.beginPath();cx.moveTo(x,4);cx.lineTo(x,h-pad);cx.stroke();
+    cx.fillText(String(((hh%24)+24)%24).padStart(2,'0')+':00',Math.min(w-30,Math.max(0,x-14)),h-4)}
+  for(let v=100;v<ymax;v+=ymax>600?200:100){const y=Y(v);cx.beginPath();cx.moveTo(0,y);cx.lineTo(w,y);cx.stroke();cx.fillText(v,2,y-2)}
+  const pts=hist.filter(p=>p.T>=T0);
+  if(pts.length>1){
+    const layers=[['coal',p=>p.coal],['gas',p=>p.gas],['wind',p=>p.wd],['pv',p=>p.pv],['bat',p=>Math.max(0,p.bat)]];
+    const base=pts.map(()=>0);
+    layers.forEach(([c,fn])=>{
+      const top=pts.map((p,i)=>base[i]+fn(p));
+      cx.beginPath();pts.forEach((p,i)=>cx.lineTo(X(p.T),Y(top[i])));
+      for(let i=pts.length-1;i>=0;i--)cx.lineTo(X(pts[i].T),Y(base[i]));
+      cx.closePath();cx.globalAlpha=.8;cx.fillStyle=col(c);cx.fill();cx.globalAlpha=1;
+      top.forEach((v,i)=>base[i]=v)});
+    cx.beginPath();pts.forEach((p,i)=>i?cx.lineTo(X(p.T),Y(p.load)):cx.moveTo(X(p.T),Y(p.load)));
+    cx.strokeStyle=col('load');cx.lineWidth=2;cx.stroke();
+  }
+  if(fc){cx.beginPath();for(let T=S.T;T<=T1;T+=0.1){const y=Y(demand(T));T===S.T?cx.moveTo(X(T),y):cx.lineTo(X(T),y)}
+    cx.setLineDash([4,4]);cx.strokeStyle=col('load');cx.lineWidth=1.5;cx.stroke();cx.setLineDash([])}
+  cx.beginPath();cx.moveTo(X(S.T),2);cx.lineTo(X(S.T),h-pad);cx.strokeStyle=col('accent');cx.lineWidth=1.5;cx.stroke();
+}
+function render(){
+  const h=S.T%24,hh=Math.floor(h),mm=Math.floor((h-hh)*60);
+  $('#clock').textContent=`${t.day} ${S.dayNo} · ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+  $('#credits').textContent=fmt(S.credits);
+  $('#rate').textContent=(S.rate>=0?'+':'')+f2(S.rate,1)+t.perS;
+  const df=S.f-50,ad=Math.abs(df),fr=$('#freq');
+  fr.className='freq'+(S.black>0||ad>0.5?' bad':ad>0.2?' warn':'');
+  $('#fVal').textContent=S.black>0?'--'+t.dec+'--':f2(S.f);
+  $('#needle').style.left=clamp((S.f-49)/2*100,0,100)+'%';
+  $('#fState').innerHTML=S.black>0?t.black(Math.ceil(S.black)):ad>0.5?t.crit:ad>0.2?(df<0?t.low:t.high):t.ok+(lastP.cur>0.05?t.curt:'');
+  $('#vLoad').textContent=fmt(lastP.load);$('#vGen').textContent=fmt(lastP.gen);
+  $('#vBand').textContent=(S.dayTot?Math.round(S.inBand/S.dayTot*100):100)+' %';
+  $('#vGas').textContent=t.setIs(Math.round(S.gasSet),Math.round(S.gas));$('#vCoal').textContent=t.setIs(Math.round(S.coalSet),Math.round(S.coal));
+  const sg=$('#sGas'),sc=$('#sCoal');
+  if(sg.disabled||document.activeElement!==sg)sg.value=Math.round(S.gasSet);
+  if(sc.disabled||document.activeElement!==sc)sc.value=Math.round(S.coalSet);
+  if(S.cap.batP){$('#vBat').textContent=t.batV(Math.round(lastP.bat),Math.round(S.soc),S.cap.batE);$('#socBar').style.width=(S.soc/S.cap.batE*100)+'%'}
+  const sh=$('#btnShed');sh.disabled=S.shedCd>0||S.black>0;
+  sh.textContent=S.shed>0?t.shedOn(Math.ceil(S.shed)):S.shedCd>0?t.shedCd(Math.ceil(S.shedCd)):t.shed;
+  renderShop();drawChart();
+}
+
+/* ---------- Schleife ---------- */
+let prev=performance.now(),uiT=0,saveT=0,histT=S.T;
+const MARKS=[1,3,5,8,15,30];
+function frame(now){
+  let dt=Math.min(0.25,(now-prev)/1000)*speed;prev=now;
+  while(dt>0){const d=Math.min(0.05,dt);step(d);dt-=d}
+  if(S.T-histT>=0.1){histT=S.T;hist.push({T:S.T,load:lastP.load,coal:S.black>0?0:S.coal,gas:S.black>0?0:S.gas,wd:lastP.wd||0,pv:lastP.pv||0,bat:lastP.bat});if(hist.length>140)hist.shift()}
+  if(now-uiT>120){uiT=now;render()}
+  if(now-saveT>5000){saveT=now;
+    MARKS.forEach(m=>{if(S.played>=m*60&&!S.marks.includes(m)){S.marks.push(m);track('min-'+m)}});save()}
+  requestAnimationFrame(frame);
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save();else prev=performance.now()});
+
+/* ---------- Start ---------- */
+applyLang();syncControls();
+const away=(Date.now()-S.last)/1000;
+if(S.n.autoGas&&S.played>60&&away>90){
+  const el=Math.min(away,7200),gain=Math.round(el*(S.earned/S.played)*0.5);
+  if(gain>0){S.credits+=gain;$('#tipText').textContent=t.offline(fmt(gain),Math.round(el/60));$('#tip').hidden=false}
+}else if(!S.tipSeen)$('#tip').hidden=false;
+render();requestAnimationFrame(frame);
+window.__hz={S:()=>S,step};
+})();
+</script>

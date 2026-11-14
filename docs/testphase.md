@@ -43,7 +43,7 @@ Das Spiel kann anonyme Ereignisse an [GoatCounter](https://www.goatcounter.com) 
 
 ### Einrichten
 1. Auf goatcounter.com ein Konto anlegen und einen Code wählen, z. B. `weiche` (ergibt `weiche.goatcounter.com`).
-2. In `web/index.html` steht der Code in der Zeile `const CONFIG={goatcounter:'weiche'};`. Aktuell eingetragen: `weiche` (Statistik aktiv).
+2. Der Code steht in `src/weiche.html` und `src/50hertz.html` in der Zeile `const CONFIG={goatcounter:'weiche'};`. Aktuell eingetragen: `weiche` (Statistik aktiv).
 3. Änderung committen. GitHub Pages aktualisiert sich automatisch.
 
 ### Gesendete Ereignisse
@@ -70,4 +70,25 @@ Das Spiel kann anonyme Ereignisse an [GoatCounter](https://www.goatcounter.com) 
 | Tagesrätsel geteilt | `share/daily` ÷ `win/daily` | ≥ 3 % | < 1 % |
 | Abbruch-Level | größter Abfall zwischen `start/Lxx` und `win/Lxx` | – | Level überarbeiten |
 
-Hinweis: Sobald die Statistik aktiv ist und der Link öffentlich verteilt wird, gehört ein kurzer Datenschutzhinweis auf die Seite. Im Spiel erscheint dann automatisch der Zusatz „anonyme Nutzungsstatistik ohne Cookies" im Menü.
+## 3. Zweiter Prototyp: 50 Hertz
+
+Link: https://matzehl78.github.io/Weiche/50hertz/ (Deutsch und Englisch, Umschalter oben rechts)
+
+Gedacht für den Feedback-Test in englischsprachigen Communities, zum Beispiel im wöchentlichen „Feedback Friday" von r/incremental_games. Vor dem Posten die Regeln des jeweiligen Subreddits lesen.
+
+| Ereignis | Bedeutung |
+|---|---|
+| `/ev/50hz/visit/first`, `/ev/50hz/visit/next-day` | Erster Besuch, Wiederkehr am Folgetag |
+| `/ev/50hz/min-1` bis `/ev/50hz/min-30` | Spielzeit-Marken: 1, 3, 5, 8, 15 und 30 Minuten erreicht |
+| `/ev/50hz/buy/autoGas` usw. | Ausbau gekauft |
+| `/ev/50hz/blackout`, `/ev/50hz/shed` | Netzausfall, Lastabwurf benutzt |
+
+| Kennzahl | Berechnung | Go | No-Go |
+|---|---|---|---|
+| Spielzeit | Anteil `min-8` an `visit/first` | ≥ 50 % | < 25 % |
+| Wiederkehr am nächsten Tag | `visit/next-day` ÷ `visit/first` | ≥ 25 % | < 15 % |
+| Resonanz | Upvotes und Kommentare im Feedback-Thread | ≥ 30 Upvotes, Wunsch nach Mobile-Version | kaum Reaktion, „zu kompliziert" |
+
+## 4. Datenschutz
+
+Die Datenschutzerklärung liegt unter https://matzehl78.github.io/Weiche/datenschutz.html und ist in beiden Spielen verlinkt. **Vor der öffentlichen Verbreitung** müssen in `static/datenschutz.html` Name, Anschrift und E-Mail der verantwortlichen Person eingetragen werden. Die Schriften werden lokal ausgeliefert, es gibt keine Verbindung zu Google Fonts.

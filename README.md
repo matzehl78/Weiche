@@ -1,16 +1,13 @@
-# Weiche
+# Weiche und 50 Hertz
 
-Ein Logik-Puzzle für Mobile im Stil eines Stellwerks: Stelle Weichen und Flipflops so, dass jedes Paket auf dem Gleis seiner Farbe landet. Jedes Level ist allein mit Logik lösbar.
+Zwei Spiele-Prototypen für die Validierungsphase. Beide laufen im Browser, ohne Installation.
 
-**Status:** Prototyp v0.2 für die Validierungsphase (spielbar im Browser).
+| Spiel | Link | Idee |
+|---|---|---|
+| **Weiche** (v0.2) | https://matzehl78.github.io/Weiche/ | Logik-Puzzle im Stil eines Stellwerks: Weichen und Flipflops so stellen, dass jedes Paket auf dem Gleis seiner Farbe landet. |
+| **50 Hertz** (v0.1) | https://matzehl78.github.io/Weiche/50hertz/ | Idle-Spiel: die Netzfrequenz mit Kraftwerken, Speichern und Lastabwurf im Band halten und das Netz ausbauen. Deutsch und Englisch. |
 
-## Spielen
-
-Online: https://matzehl78.github.io/Weiche/ (wird bei jeder Änderung an `web/` automatisch aktualisiert)
-
-Lokal: `web/index.html` im Browser öffnen. Es braucht keinen Build und keinen Server.
-
-## Spielelemente
+## Weiche
 
 | Element | Form | Verhalten |
 |---|---|---|
@@ -18,22 +15,40 @@ Lokal: `web/index.html` im Browser öffnen. Es braucht keinen Build und keinen S
 | Flipflop (T) | eckig | Wechselt nach jedem Paket die Richtung. Du stellst nur die Startrichtung ein. |
 | Gleis (GL) | farbiges Feld | Ziel für Pakete derselben Farbe und Form. |
 
-## Inhalt des Prototyps
-
 - 20 Level, prozedural erzeugt mit festem Seed. Ein Solver prüft, dass jedes Level genau eine Lösung hat.
 - Tagesrätsel mit Seed aus dem Datum und teilbarem Emoji-Ergebnis.
-- Tipps, Tempo 1–3×, Sterne-Wertung. Der Fortschritt wird im Browser gespeichert (localStorage).
-- Formen zusätzlich zu Farben, damit auch Menschen mit Farbschwäche spielen können.
-- Fragebogen im Spiel (5 Fragen) mit angehängtem Spielstand zum Kopieren.
-- Optionale anonyme Nutzungsstatistik über GoatCounter, standardmäßig aus.
+- Tipps, Tempo 1–3×, Sterne-Wertung, Fragebogen mit 5 Fragen.
+
+## 50 Hertz
+
+- Ein Spieltag dauert 4 Minuten. Last, Wind und Sonne ändern sich über den Tag.
+- Gas regelt schnell und ist teuer, Kohle ist günstig und träge. Wind und Solar sind kostenlos und schwanken.
+- Geld gibt es nur im Band von 49,8 bis 50,2 Hz. Über 1 Hz Abweichung fällt das Netz aus.
+- Der Sekundärregler automatisiert das Nachregeln. Ab dann läuft das Netz auch ohne Eingriffe.
 
 ## Projektstruktur
 
 ```
-web/index.html         Spielbarer Prototyp (eine Datei, ohne Abhängigkeiten außer Google Fonts)
+src/weiche.html        Spiel „Weiche" (Seiten-Fragment)
+src/50hertz.html       Spiel „50 Hertz" (Seiten-Fragment)
+static/                Schriften (lokal gehostet) und Datenschutzseite
+tools/build.py         Baut aus src/ und static/ die fertige Seite in dist/
 docs/marktanalyse.md   Markt-, Wettbewerbs- und Umsatzanalyse, Entscheidungsmatrix, Roadmap
-docs/testphase.md      Anleitung für die Testphase: Fragebogen, Statistik, Go/No-Go-Kennzahlen
+docs/testphase.md      Fragebogen, Statistik und Go/No-Go-Kennzahlen
+docs/kurzvideos.md     12 Kurzvideo-Konzepte mit Zeitplan und Auswertung
 ```
+
+## Lokal bauen
+
+```bash
+python3 tools/build.py
+```
+
+Danach `dist/index.html` im Browser öffnen. Bei jeder Änderung an `src/`, `static/` oder `tools/` baut und veröffentlicht GitHub Actions die Seite automatisch.
+
+## Statistik und Datenschutz
+
+Beide Spiele senden anonyme Ereignisse an GoatCounter (keine Cookies, keine personenbezogenen Daten). Der Code steht jeweils in der Zeile `const CONFIG={goatcounter:'weiche'};`. Die Datenschutzerklärung liegt in `static/datenschutz.html`.
 
 ## Nächste Schritte
 
