@@ -43,7 +43,7 @@ Das Spiel kann anonyme Ereignisse an [GoatCounter](https://www.goatcounter.com) 
 
 ### Einrichten
 1. Auf goatcounter.com ein Konto anlegen und einen Code wählen, z. B. `weiche` (ergibt `weiche.goatcounter.com`).
-2. In `web/index.html` die Zeile `const CONFIG={goatcounter:''};` suchen und den Code eintragen: `const CONFIG={goatcounter:'weiche'};`
+2. In `web/index.html` steht der Code in der Zeile `const CONFIG={goatcounter:'weiche'};`. Aktuell eingetragen: `weiche` (Statistik aktiv).
 3. Änderung committen. GitHub Pages aktualisiert sich automatisch.
 
 ### Gesendete Ereignisse

@@ -240,7 +240,7 @@ function save(){try{localStorage.setItem(STORE,JSON.stringify(P))}catch(e){}}
 /* ---------- Auswertung (anonym, ohne Cookies) ---------- */
 const VERSION='v0.2';
 // GoatCounter-Code eintragen, z. B. 'weiche' für weiche.goatcounter.com. Leer = es wird nichts gesendet.
-const CONFIG={goatcounter:''};
+const CONFIG={goatcounter:'weiche'};
 const S=P.stats=Object.assign({first:todayKey(),days:[],levels:{}},P.stats||{});
 function track(ev){
   if(!CONFIG.goatcounter)return;
