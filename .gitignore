@@ -1,0 +1,17 @@
+# Abhängigkeiten und Builds
+node_modules/
+dist/
+android/app/build/
+android/.gradle/
+ios/App/Pods/
+*.apk
+*.aab
+
+# Signierschlüssel – NIEMALS committen
+*.jks
+*.keystore
+keystore.properties
+
+# System
+.DS_Store
+Thumbs.db

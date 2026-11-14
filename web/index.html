@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}</style>
+<title>Weiche</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: Ein-Bildschirm-Stellpult – Kopfzeile, Paketfolge, Spurplan (flexibel), Bedienleiste */
+:root{
+  --panel:#1b2225; --panel-2:#232c30; --panel-3:#2f3a40; --frame:#3a474e;
+  --grid:rgba(255,255,255,.035);
+  --rail:#4f5d64; --rail-set:#9fb0b6; --lit:#fff1cf; --ink:#e8eef0; --muted:#8fa0a6;
+  --accent:#f0b13e; --accent-ink:#231a06; --ok:#6fd08c; --bad:#ff6a57;
+  --c0:#ef5b5b; --c1:#4f8ff7; --c2:#f7d23e; --c3:#35c27e; --c4:#b07cf5; --c5:#3fd0df;
+  --f-display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --f-body:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--panel);color:var(--ink);font-family:var(--f-body);font-size:15px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#app{height:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column}
+.screen{flex:1;min-height:0;display:flex;flex-direction:column;padding-block:12px}
+
+/* ---------- Menü ---------- */
+#menu{justify-content:center;gap:22px;align-items:stretch}
+.brand{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-family:var(--f-display);font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-size:13px}
+.wordmark{font-family:var(--f-display);font-weight:700;font-size:clamp(64px,18vw,112px);line-height:.85;letter-spacing:.04em;margin:0}
+.lede{color:var(--muted);max-width:42ch;line-height:1.45;margin:0}
+.hero{border:1px solid var(--frame);border-radius:14px;height:clamp(150px,30vh,240px);
+  background:linear-gradient(var(--grid) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/28px 28px,var(--panel-2)}
+.hero svg{width:100%;height:100%;display:block}
+.menu-actions{display:grid;gap:10px}
+.btn{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:10px;
+  background:var(--panel-3);border:1px solid var(--frame);font-weight:600;text-align:left}
+.btn small{color:var(--muted);font-weight:500}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary small{color:var(--accent-ink);opacity:.75}
+.foot{color:var(--muted);font-size:12px;letter-spacing:.04em}
+
+/* ---------- Levelauswahl ---------- */
+.bar{display:flex;align-items:center;gap:10px;min-height:44px}
+.back{padding:8px 10px 8px 0;color:var(--muted);font-weight:600}
+.bar h2{font-family:var(--f-display);font-weight:700;font-size:24px;letter-spacing:.03em;margin:0;flex:1}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:8px;overflow:auto;padding-bottom:8px}
+.tile{aspect-ratio:1;max-width:100%;border-radius:10px;background:var(--panel-3);border:1px solid var(--frame);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.tile b{font-family:var(--f-display);font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.tile span{font-size:11px;color:var(--accent);letter-spacing:.05em}
+.tile[disabled]{opacity:.35;cursor:default}
+.tile.next{border-color:var(--accent)}
+
+/* ---------- Spiel ---------- */
+#game{gap:10px;position:relative}
+.ttl{flex:1;min-width:0}
+.ttl b{display:block;font-family:var(--f-display);font-weight:700;font-size:22px;letter-spacing:.03em;line-height:1}
+.ttl span{font-size:12px;color:var(--muted)}
+.attempt{font-family:var(--f-display);font-weight:600;color:var(--muted);font-size:15px;font-variant-numeric:tabular-nums}
+.tip{margin:0;padding:10px 12px;border-radius:10px;background:var(--panel-3);border-left:3px solid var(--accent);line-height:1.4;font-size:14px}
+.queue-wrap{display:flex;align-items:center;gap:10px}
+.queue-label{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#queue{display:flex;gap:6px;flex-wrap:wrap}
+.pkg{position:relative;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--panel-2);border:1px solid var(--frame)}
+.pkg svg{width:24px;height:24px}
+.pkg i{position:absolute;top:-6px;left:-5px;font-style:normal;font-size:10px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.pkg.now{border-color:var(--lit);box-shadow:0 0 0 2px rgba(255,241,207,.25)}
+.pkg.done{opacity:.35}
+.pkg.bad{border-color:var(--bad);box-shadow:0 0 0 2px rgba(255,106,87,.35)}
+.board{flex:1;min-height:180px;position:relative;border:1px solid var(--frame);border-radius:14px;overflow:hidden;
+  background:linear-gradient(var(--grid) 1px,transparent 1px) 0 0/28px 28px,linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/28px 28px,var(--panel-2)}
+.board svg{width:100%;height:100%;display:block;touch-action:manipulation}
+#status{margin:0;min-height:2.6em;line-height:1.35;font-size:14px;color:var(--muted)}
+#status b{color:var(--ink)}
+#status.bad b{color:var(--bad)}
+.controls{display:grid;grid-template-columns:1fr 1fr 1fr 1.6fr;gap:8px}
+.ctl{padding:12px 6px;border-radius:10px;background:var(--panel-3);border:1px solid var(--frame);font-weight:600;font-size:14px}
+.ctl[disabled]{opacity:.4;cursor:default}
+.ctl.go{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-family:var(--f-display);font-size:18px;letter-spacing:.06em;text-transform:uppercase}
+
+/* SVG-Elemente */
+.rail{fill:none;stroke:var(--rail);stroke-width:5;stroke-linecap:round;stroke-dasharray:0 15 4000}
+.rail.set{stroke:var(--rail-set);stroke-dasharray:none}
+.rail.lit{stroke:var(--lit);stroke-width:6;stroke-dasharray:none;filter:drop-shadow(0 0 5px rgba(255,241,207,.55))}
+.rail.src{stroke-dasharray:none}
+.node{cursor:pointer;outline:none}
+.node .body{fill:var(--panel-3);stroke:var(--rail-set);stroke-width:2}
+.node.ff .body{stroke:var(--accent)}
+.node:focus-visible .body{stroke:var(--lit);stroke-width:3}
+.node .leg{stroke:var(--muted);stroke-width:2.2;stroke-linecap:round;opacity:.35}
+.node .leg.on{stroke:var(--lit);stroke-width:3.2;opacity:1}
+.node .stem{stroke:var(--lit);stroke-width:3.2;stroke-linecap:round}
+.node .lab{font-family:var(--f-display);font-weight:600;font-size:13px;fill:var(--muted);letter-spacing:.04em}
+.node.ff .lab{fill:var(--accent)}
+.node.hint .ring{stroke:var(--accent);stroke-width:3;fill:none;animation:pulse 1s ease-in-out infinite}
+.node.flip .body{animation:flip .35s ease-out}
+.bin .box{stroke-width:2.5}
+.bin.bad .box{stroke:var(--bad)!important;animation:blink .5s steps(2) 3}
+.bin .cnt{font-family:var(--f-display);font-weight:700;font-size:14px;fill:var(--ink)}
+.bin .gl{font-family:var(--f-display);font-weight:600;font-size:12px;fill:var(--muted);letter-spacing:.06em}
+.src-box{fill:var(--panel-3);stroke:var(--frame);stroke-width:1.5}
+.src-lab{font-family:var(--f-display);font-weight:600;font-size:11px;fill:var(--muted);letter-spacing:.12em}
+@keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
+@keyframes flip{0%{transform:scale(1.25)}100%{transform:scale(1)}}
+@keyframes blink{50%{opacity:.2}}
+@media (prefers-reduced-motion:reduce){.node.hint .ring,.node.flip .body,.bin.bad .box{animation:none}}
+
+/* Ergebnis-Overlay */
+.overlay{position:absolute;inset:0;background:rgba(15,19,21,.78);display:grid;place-items:center;padding:16px;z-index:5}
+.card{width:min(380px,100%);background:var(--panel-2);border:1px solid var(--frame);border-radius:16px;padding:22px;display:grid;gap:14px;text-align:center}
+.card h3{margin:0;font-family:var(--f-display);font-weight:700;font-size:30px;letter-spacing:.03em}
+.stars{font-size:34px;letter-spacing:6px;color:var(--accent)}
+.stars .off{color:var(--panel-3)}
+.card p{margin:0;color:var(--muted)}
+.share{margin:0;padding:10px;border-radius:10px;background:var(--panel);font-size:18px;line-height:1.3;white-space:pre-wrap;word-break:break-word;user-select:all}
+.card .row{display:grid;gap:8px}
+.copied{font-size:13px;color:var(--ok);min-height:1.2em}
+@media (max-width:380px){.grid{grid-template-columns:repeat(4,1fr)}.ctl{font-size:13px}}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <section id="menu" class="screen">
+    <div class="brand">
+      <span class="eyebrow">Stellwerk-Rätsel</span>
+      <h1 class="wordmark">WEICHE</h1>
+      <p class="lede">Stelle Weichen und Flipflops so, dass jedes Paket auf dem Gleis seiner Farbe landet. Jedes Level ist allein mit Logik lösbar.</p>
+    </div>
+    <div class="hero"><svg id="heroSvg" aria-hidden="true"></svg></div>
+    <div class="menu-actions">
+      <button class="btn primary" id="btnContinue"><span>Weiterspielen</span><small id="contLabel">Level 1</small></button>
+      <button class="btn" id="btnLevels"><span>Levelauswahl</span><small id="starTotal">0 / 60 ★</small></button>
+      <button class="btn" id="btnDaily"><span>Tagesrätsel</span><small id="dailyLabel"></small></button>
+    </div>
+    <div class="foot">Prototyp v0.1 · 20 Level · Fortschritt bleibt in diesem Browser gespeichert</div>
+  </section>
+
+  <section id="levels" class="screen" hidden>
+    <div class="bar"><button class="back" data-go="menu">‹ Menü</button><h2>Levelauswahl</h2></div>
+    <div class="grid" id="levelGrid"></div>
+  </section>
+
+  <section id="game" class="screen" hidden>
+    <div class="bar">
+      <button class="back" id="btnBack">‹ Menü</button>
+      <div class="ttl"><b id="gTitle">Level 1</b><span id="gSub"></span></div>
+      <span class="attempt" id="gAttempt">Versuch 1</span>
+    </div>
+    <p class="tip" id="gTip" hidden></p>
+    <div class="queue-wrap"><span class="queue-label">Folge</span><div id="queue"></div></div>
+    <div class="board"><svg id="boardSvg" role="group" aria-label="Spurplan"><g id="layerStatic"></g><g id="layerToken"></g></svg></div>
+    <p id="status"></p>
+    <div class="controls">
+      <button class="ctl" id="btnHint">Tipp</button>
+      <button class="ctl" id="btnReset">Auf Anfang</button>
+      <button class="ctl" id="btnSpeed">Tempo 1×</button>
+      <button class="ctl go" id="btnStart">Start</button>
+    </div>
+    <div class="overlay" id="overlay" hidden>
+      <div class="card">
+        <h3 id="ovTitle">Geschafft</h3>
+        <div class="stars" id="ovStars"></div>
+        <p id="ovInfo"></p>
+        <pre class="share" id="ovShare" hidden></pre>
+        <div class="copied" id="ovCopied" hidden></div>
+        <div class="row" id="ovButtons"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const NS='http://www.w3.org/2000/svg';
+const COLORS=[
+  {name:'rot',shape:'circle'},{name:'blau',shape:'square'},{name:'gelb',shape:'triangle'},
+  {name:'grün',shape:'diamond'},{name:'violett',shape:'star'},{name:'türkis',shape:'hex'}];
+const EMOJI_OK='🟩',EMOJI_BAD='🟥',EMOJI_NO='⬛';
+// [Knoten, Flipflops, Pakete, max. Tiefe]
+const LEVELS=[[1,0,2,1],[2,0,3,2],[1,1,3,1],[2,1,4,2],[3,1,4,2],[3,1,5,2],[3,2,5,2],[4,1,5,3],[4,2,6,3],[4,2,6,3],
+  [5,2,6,3],[5,2,7,3],[5,3,7,3],[5,2,8,3],[6,3,7,3],[6,3,8,3],[6,2,8,4],[7,3,8,4],[7,3,9,4],[7,4,10,4]];
+const DAILY=[5,2,7,3];
+const TIPS={
+  1:'Tippe auf die Weiche W1, um sie umzustellen. Die hell leuchtende Fahrstraße zeigt, wohin Paket 1 fährt. Dann Start.',
+  2:'Jedes Paket muss auf dem Gleis mit seiner Farbe und Form landen.',
+  3:'Neu: der Flipflop (eckig, T1). Nach jedem Paket wechselt er die Richtung. Du stellst nur ein, wohin er zuerst schaltet.',
+  5:'Lies die Paketfolge oben von links nach rechts. Die Reihenfolge entscheidet.',
+  7:'Zwei Flipflops: Jeder wechselt nur, wenn ein Paket über ihn fährt.',
+  13:'Drei Flipflops. Arbeite dich vom Zielgleis rückwärts zur Einfahrt.'};
+
+/* ---------- Speicher ---------- */
+const STORE='weiche.v1';
+function load(){try{return JSON.parse(localStorage.getItem(STORE))||{}}catch(e){return {}}}
+const P=Object.assign({unlocked:1,stars:{},daily:{}},load());
+function save(){try{localStorage.setItem(STORE,JSON.stringify(P))}catch(e){}}
+
+/* ---------- Zufall ---------- */
+function rngOf(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+/* ---------- Generator ---------- */
+function buildTree(r,k,maxD){
+  const nodes=[];
+  const mk=d=>{nodes.push({leaf:true,depth:d});return nodes.length-1};
+  const expand=i=>{const n=nodes[i];n.leaf=false;n.l=mk(n.depth+1);n.r=mk(n.depth+1)};
+  const root=mk(0);expand(root);
+  for(let c=1;c<k;c++){
+    const open=[];nodes.forEach((n,i)=>{if(n.leaf&&n.depth<maxD)open.push(i)});
+    if(!open.length)return null;
+    expand(open[Math.floor(r()*open.length)]);
+  }
+  return {nodes,root};
+}
+function simulate(T,states,n){
+  const s=states.slice(),out=[],visits=new Array(T.nodes.length).fill(0);
+  for(let p=0;p<n;p++){
+    let i=T.root;
+    while(!T.nodes[i].leaf){const nd=T.nodes[i];visits[i]++;const d=s[i];if(nd.kind==='T')s[i]^=1;i=d?nd.r:nd.l}
+    out.push(i);
+  }
+  return {out,visits};
+}
+function genLevel(seed,[k,f,n,maxD]){
+  const passes=[[1,true],[2,true],[3,true],[8,true],[64,false]];
+  for(const [maxSol,strict] of passes){
+    const r=rngOf(seed*7919+maxSol*31);
+    for(let tries=0;tries<700;tries++){
+      const T=buildTree(r,k,maxD);if(!T)continue;
+      const internals=[],leaves=[];
+      // Breitensuche für Nummerierung
+      const q=[T.root];while(q.length){const i=q.shift();const nd=T.nodes[i];if(nd.leaf)leaves.push(i);else{internals.push(i);q.push(nd.l,nd.r)}}
+      internals.forEach(i=>T.nodes[i].kind='W');
+      shuffle(internals.slice(),r).slice(0,f).forEach(i=>T.nodes[i].kind='T');
+      const cols=shuffle([0,1,2,3,4,5],r);
+      shuffle(leaves.slice(),r).forEach((li,j)=>{T.nodes[li].color=j<6?cols[j]:cols[Math.floor(r()*6)]});
+      const sol=new Array(T.nodes.length).fill(0);internals.forEach(i=>sol[i]=r()<.5?1:0);
+      const {out,visits}=simulate(T,sol,n);
+      if(strict&&internals.some(i=>visits[i]===0))continue;
+      if(internals.some(i=>T.nodes[i].kind==='T'&&visits[i]<2))continue;
+      const target=out.map(li=>T.nodes[li].color);
+      if(f>0&&new Set(target).size<2)continue;
+      const sols=[];
+      for(let m=0;m<(1<<k);m++){
+        const st=new Array(T.nodes.length).fill(0);internals.forEach((ii,b)=>st[ii]=(m>>b)&1);
+        const res=simulate(T,st,n).out;
+        if(res.every((li,p)=>T.nodes[li].color===target[p]))sols.push(st);
+      }
+      if(sols.length>maxSol||sols.length===(1<<k))continue;
+      let start=null;
+      for(let t=0;t<60&&!start;t++){
+        const st=new Array(T.nodes.length).fill(0);internals.forEach(i=>st[i]=r()<.5?1:0);
+        if(!sols.some(s=>internals.every(i=>s[i]===st[i])))start=st;
+      }
+      if(!start)continue;
+      internals.forEach((i,j)=>{T.nodes[i].num=0});
+      let wn=0,tn=0;internals.forEach(i=>{const nd=T.nodes[i];nd.label=nd.kind==='T'?'T'+(++tn):'W'+(++wn)});
+      leaves.slice().sort((a,b)=>0).forEach(()=>{});
+      const L={T,internals,leaves,target,sols,start,n,k,f};
+      layout(L);
+      return L;
+    }
+  }
+  throw new Error('Level konnte nicht erzeugt werden');
+}
+const COL=78,ROW=88,TOP=78,PADX=24;
+function layout(L){
+  const T=L.T,order=[];
+  const ino=i=>{const nd=T.nodes[i];if(nd.leaf){order.push(i);return}ino(nd.l);ino(nd.r)};ino(T.root);
+  const maxDepth=Math.max(...L.internals.map(i=>T.nodes[i].depth));
+  const leafY=TOP+(maxDepth+1)*ROW;
+  order.forEach((li,j)=>{const nd=T.nodes[li];nd.x=PADX+COL/2+j*COL;nd.y=leafY;nd.gl=j+1});
+  const post=i=>{const nd=T.nodes[i];if(nd.leaf)return;post(nd.l);post(nd.r);nd.x=(T.nodes[nd.l].x+T.nodes[nd.r].x)/2;nd.y=TOP+nd.depth*ROW};
+  post(T.root);
+  L.W=PADX*2+order.length*COL;L.H=leafY+78;L.srcY=TOP-52;L.order=order;
+}
+const cache={};
+function levelData(idx){return cache['L'+idx]||(cache['L'+idx]=genLevel(1000+idx*17,LEVELS[idx-1]))}
+function todayKey(){const d=new Date();const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())}
+function dailyData(key){return cache['D'+key]||(cache['D'+key]=genLevel(parseInt(key.replace(/-/g,''),10),DAILY))}
+
+/* ---------- Zeichnen ---------- */
+function shape(s,r,style){
+  const pts=a=>`<polygon points="${a.map(p=>p.map(v=>v.toFixed(1)).join(',')).join(' ')}" style="${style}"/>`;
+  if(s==='circle')return `<circle r="${r*.9}" style="${style}"/>`;
+  if(s==='square')return `<rect x="${-r*.8}" y="${-r*.8}" width="${r*1.6}" height="${r*1.6}" rx="${r*.18}" style="${style}"/>`;
+  if(s==='triangle')return pts([[0,-r],[r*.95,r*.72],[-r*.95,r*.72]]);
+  if(s==='diamond')return pts([[0,-r*1.05],[r*.95,0],[0,r*1.05],[-r*.95,0]]);
+  if(s==='star'){const a=[];for(let i=0;i<10;i++){const rr=i%2?r*.45:r*1.05,t=-Math.PI/2+i*Math.PI/5;a.push([Math.cos(t)*rr,Math.sin(t)*rr])}return pts(a)}
+  const a=[];for(let i=0;i<6;i++){const t=Math.PI/6+i*Math.PI/3;a.push([Math.cos(t)*r,Math.sin(t)*r])}return pts(a);
+}
+function pkgSVG(c,r){return `<circle r="${r}" style="fill:var(--c${c})"/>${shape(COLORS[c].shape,r*.48,'fill:var(--panel)')}`}
+function edgeD(a,b){const my=(a.y+b.y)/2;return `M${a.x},${a.y} C${a.x},${my} ${b.x},${my} ${b.x},${b.y}`}
+function bez(a,b,t){const my=(a.y+b.y)/2,u=1-t;
+  return {x:u*u*u*a.x+3*u*u*t*a.x+3*u*t*t*b.x+t*t*t*b.x,y:u*u*u*a.y+3*u*u*t*my+3*u*t*t*my+t*t*t*b.y}}
+function routeOf(L,states){const T=L.T,r=[];let i=T.root;while(!T.nodes[i].leaf){r.push(i);i=states[i]?T.nodes[i].r:T.nodes[i].l}r.push(i);return r}
+
+function render(svg,layer,L,states,o={}){
+  const T=L.T,lit=new Set(o.lit||[]),parts=[],root=T.nodes[T.root];
+  svg.setAttribute('viewBox',`0 0 ${L.W} ${L.H}`);
+  // Einfahrt
+  parts.push(`<path class="rail src ${lit.size?'lit':'set'}" d="M${root.x},${L.srcY+14} L${root.x},${root.y}"/>`);
+  const back=[],mid=[],front=[];
+  L.internals.forEach(i=>{const nd=T.nodes[i];[[nd.l,0],[nd.r,1]].forEach(([c,dir])=>{
+    const on=states[i]===dir,isLit=on&&lit.has(i)&&lit.has(c);
+    const cls=isLit?'lit':on?'set':'';
+    (isLit?front:on?mid:back).push(`<path class="rail ${cls}" d="${edgeD(nd,T.nodes[c])}"/>`)})});
+  parts.push(...back,...mid,...front);
+  parts.push(`<g transform="translate(${root.x},${L.srcY})"><rect class="src-box" x="-34" y="-16" width="68" height="30" rx="7"/><text class="src-lab" text-anchor="middle" y="4">EINFAHRT</text></g>`);
+  // Gleise
+  L.leaves.forEach(li=>{const nd=T.nodes[li],c=nd.color,cnt=(o.counts||{})[li]||0,bad=o.bad===li;
+    parts.push(`<g class="bin${bad?' bad':''}" transform="translate(${nd.x},${nd.y})">
+      <rect class="box" x="-29" y="0" width="58" height="46" rx="8" style="fill:var(--c${c});fill-opacity:.16;stroke:var(--c${c})"/>
+      <g transform="translate(0,23)">${shape(COLORS[c].shape,11,`fill:var(--c${c})`)}</g>
+      ${cnt?`<text class="cnt" x="22" y="-6" text-anchor="middle">${cnt}</text>`:''}
+      <text class="gl" text-anchor="middle" y="64">GL ${nd.gl}</text></g>`)});
+  // Weichen
+  L.internals.forEach(i=>{const nd=T.nodes[i],ff=nd.kind==='T',d=states[i];
+    const body=ff?`<rect class="body" x="-18" y="-18" width="36" height="36" rx="8"/>`:`<circle class="body" r="18"/>`;
+    const name=(ff?'Flipflop ':'Weiche ')+nd.label+', Richtung '+(d?'rechts':'links');
+    parts.push(`<g class="node${ff?' ff':''}${o.hint===i?' hint':''}${o.flip===i?' flip':''}" data-node="${i}" tabindex="${o.interactive?0:-1}" role="button" aria-label="${name}" transform="translate(${nd.x},${nd.y})">
+      <circle r="36" fill="transparent"/>${o.hint===i?'<circle class="ring" r="27"/>':''}${body}
+      <line class="stem" x1="0" y1="-10" x2="0" y2="-1"/>
+      <line class="leg${d?'':' on'}" x1="0" y1="-1" x2="-8" y2="9"/>
+      <line class="leg${d?' on':''}" x1="0" y1="-1" x2="8" y2="9"/>
+      <text class="lab" x="-27" y="5" text-anchor="end">${nd.label}</text></g>`)});
+  layer.innerHTML=parts.join('');
+}
+
+/* ---------- Bildschirme ---------- */
+const screens=['menu','levels','game'];
+function show(id){screens.forEach(s=>$('#'+s).hidden=s!==id);if(id==='menu')renderMenu();if(id==='levels')renderLevels()}
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.go)));
+function starsOf(n){return '★'.repeat(n)+'☆'.repeat(3-n)}
+function totalStars(){return Object.values(P.stars).reduce((a,b)=>a+b,0)}
+function renderMenu(){
+  const next=Math.min(P.unlocked,LEVELS.length);
+  $('#contLabel').textContent='Level '+next;
+  $('#starTotal').textContent=totalStars()+' / '+LEVELS.length*3+' ★';
+  const key=todayKey(),d=P.daily[key];
+  $('#dailyLabel').textContent=(d&&d.done?'gelöst · ':'')+key.split('-').reverse().join('.');
+  const L=levelData(9),hs=$('#heroSvg');
+  hs.innerHTML='<g></g>';
+  const sol=L.sols[0];
+  render(hs,hs.firstChild,L,sol,{lit:routeOf(L,sol)});
+}
+function renderLevels(){
+  const g=$('#levelGrid');g.innerHTML='';
+  LEVELS.forEach((_,j)=>{const i=j+1,b=document.createElement('button');
+    b.className='tile'+(i===P.unlocked?' next':'');b.disabled=i>P.unlocked;
+    const s=P.stars[i]||0;
+    b.innerHTML=`<b>${i}</b><span>${i<=P.unlocked?(s?starsOf(s):'neu'):'gesperrt'}</span>`;
+    b.setAttribute('aria-label','Level '+i+(i>P.unlocked?', gesperrt':''));
+    b.addEventListener('click',()=>startLevel(i));g.appendChild(b)});
+}
+$('#btnContinue').addEventListener('click',()=>startLevel(Math.min(P.unlocked,LEVELS.length)));
+$('#btnLevels').addEventListener('click',()=>show('levels'));
+$('#btnDaily').addEventListener('click',()=>startDaily());
+$('#btnBack').addEventListener('click',()=>{cancelRun();show('menu')});
+
+/* ---------- Spielzustand ---------- */
+let G=null,runId=0,speed=1;
+const svg=$('#boardSvg'),layer=$('#layerStatic'),tok=$('#layerToken');
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function startLevel(i){begin({mode:'level',idx:i,L:levelData(i)})}
+function startDaily(){const key=todayKey();begin({mode:'daily',key,L:dailyData(key)})}
+function begin(g){
+  cancelRun();
+  G=Object.assign(g,{states:g.L.start.slice(),attempts:0,hints:0,running:false,cur:-1,results:[],rows:[],counts:{},hint:null,bad:null,flip:null});
+  const L=G.L,wc=L.internals.filter(i=>L.T.nodes[i].kind==='W').length,tc=L.k-wc;
+  $('#gTitle').textContent=G.mode==='daily'?'Tagesrätsel':'Level '+G.idx;
+  $('#gSub').textContent=[wc?wc+(wc>1?' Weichen':' Weiche'):'',tc?tc+(tc>1?' Flipflops':' Flipflop'):'',L.n+' Pakete'].filter(Boolean).join(' · ');
+  const tip=G.mode==='level'?TIPS[G.idx]:null;
+  $('#gTip').hidden=!tip;$('#gTip').textContent=tip||'';
+  $('#overlay').hidden=true;tok.innerHTML='';
+  show('game');
+  if(G.mode==='daily'&&P.daily[G.key]&&P.daily[G.key].done){showWin(true);}
+  setStatus('Stelle die Weichen und drücke <b>Start</b>.');
+  refresh();
+}
+function refresh(){
+  const L=G.L;
+  const lit=G.running?G.lit:routeOf(L,G.states);
+  render(svg,layer,L,G.states,{lit,interactive:!G.running,hint:G.hint,bad:G.bad,counts:G.counts,flip:G.flip});
+  $('#gAttempt').textContent='Versuch '+Math.max(1,G.attempts+(G.running?0:1));
+  const q=$('#queue');q.innerHTML='';
+  L.target.forEach((c,p)=>{const d=document.createElement('div');
+    let cls='pkg';if(G.running&&p===G.cur)cls+=' now';else if(p<G.results.length)cls+=G.results[p]?' done':' bad';else if(!G.running&&p===0)cls+=' now';
+    d.className=cls;d.title='Paket '+(p+1)+': '+COLORS[c].name;
+    d.innerHTML=`<i>${p+1}</i><svg viewBox="-14 -14 28 28">${pkgSVG(c,12)}</svg>`;q.appendChild(d)});
+  $('#btnStart').disabled=G.running;$('#btnHint').disabled=G.running;
+  $('#btnReset').textContent=G.running?'Abbrechen':'Auf Anfang';
+}
+function setStatus(html,bad){const s=$('#status');s.innerHTML=html;s.classList.toggle('bad',!!bad)}
+function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+
+function toggleNode(i){
+  if(!G||G.running)return;
+  if(G.results.length){G.results=[];G.counts={};G.bad=null}
+  G.states[i]^=1;G.hint=null;buzz(8);refresh();
+  setStatus('Stelle die Weichen und drücke <b>Start</b>.');
+  const el=layer.querySelector(`[data-node="${i}"]`);el&&el.focus({preventScroll:true});
+}
+svg.addEventListener('click',e=>{const n=e.target.closest('[data-node]');if(n)toggleNode(+n.dataset.node)});
+svg.addEventListener('keydown',e=>{const n=e.target.closest('[data-node]');if(n&&(e.key==='Enter'||e.key===' ')){e.preventDefault();toggleNode(+n.dataset.node)}});
+
+/* ---------- Ablauf ---------- */
+function cancelRun(){runId++;if(G&&G.running){G.running=false;G.states=G.planned.slice()}tok.innerHTML=''}
+function anim(dur,fn,my){return new Promise(res=>{const t0=performance.now();
+  const tick=now=>{if(my!==runId)return res(false);const t=Math.min(1,(now-t0)/dur);fn(t);t<1?requestAnimationFrame(tick):res(true)};requestAnimationFrame(tick)})}
+function placeTok(p){tok.firstChild&&tok.firstChild.setAttribute('transform',`translate(${p.x.toFixed(1)},${p.y.toFixed(1)})`)}
+function dur(a,b){return Math.hypot(a.x-b.x,a.y-b.y)*1.15/(0.30*speed*(reduced?2:1))}
+
+async function run(){
+  if(G.running)return;
+  const L=G.L,T=L.T,my=++runId;
+  if(G.results.length){G.results=[];G.counts={};G.bad=null}
+  G.planned=G.states.slice();G.running=true;G.attempts++;G.hint=null;G.flip=null;
+  const row=[];
+  for(let p=0;p<L.n;p++){
+    G.cur=p;G.lit=routeOf(L,G.states);refresh();
+    setStatus(`Paket <b>${p+1}</b> von ${L.n} unterwegs.`);
+    const c=L.target[p];
+    tok.innerHTML=`<g>${pkgSVG(c,13)}</g>`;
+    const root=T.nodes[T.root],s={x:root.x,y:L.srcY+14};
+    placeTok(s);
+    if(!await anim(dur(s,root),t=>placeTok({x:root.x,y:s.y+(root.y-s.y)*t}),my))return;
+    let i=T.root;
+    while(!T.nodes[i].leaf){
+      const nd=T.nodes[i],next=G.states[i]?nd.r:nd.l;
+      if(nd.kind==='T'){G.states[i]^=1;G.flip=i;refresh();G.flip=null}
+      const a=nd,b=T.nodes[next];
+      if(!await anim(dur(a,b),t=>placeTok(bez(a,b,t)),my))return;
+      i=next;
+    }
+    const b=T.nodes[i];
+    if(!await anim(140/speed,t=>placeTok({x:b.x,y:b.y+23*t}),my))return;
+    tok.innerHTML='';
+    G.counts[i]=(G.counts[i]||0)+1;
+    const ok=b.color===c;G.results.push(ok);row.push(ok?EMOJI_OK:EMOJI_BAD);
+    if(!ok){
+      for(let r=p+1;r<L.n;r++)row.push(EMOJI_NO);
+      G.rows.push(row.join(''));
+      G.running=false;G.bad=i;G.cur=-1;G.states=G.planned.slice();buzz([30,40,30]);refresh();
+      setStatus(`<b>Paket ${p+1} (${COLORS[c].name}) ist auf Gleis ${b.gl} gelandet.</b> Die Stellung ist zurückgesetzt. Stelle um und starte neu.`,true);
+      return;
+    }
+    buzz(6);
+  }
+  G.rows.push(row.join(''));
+  G.running=false;G.cur=-1;G.states=G.planned.slice();refresh();
+  win();
+}
+function calcStars(){let s=G.attempts===1?3:G.attempts<=3?2:1;if(G.hints)s--;return Math.max(1,s)}
+function win(){
+  const s=calcStars();
+  if(G.mode==='level'){
+    P.stars[G.idx]=Math.max(P.stars[G.idx]||0,s);
+    if(G.idx===P.unlocked&&P.unlocked<LEVELS.length)P.unlocked++;
+  }else{
+    P.daily[G.key]={done:true,stars:s,attempts:G.attempts,hints:G.hints,rows:G.rows.slice()};
+  }
+  save();
+  setStatus('<b>Alle Pakete richtig zugestellt.</b>');
+  showWin(false);
+}
+function showWin(fromStore){
+  const ov=$('#overlay'),btns=$('#ovButtons');btns.innerHTML='';
+  let s,attempts,hints,rows;
+  if(G.mode==='daily'&&fromStore){const d=P.daily[G.key];s=d.stars;attempts=d.attempts;hints=d.hints;rows=d.rows}
+  else{s=calcStars();attempts=G.attempts;hints=G.hints;rows=G.rows}
+  $('#ovTitle').textContent=G.mode==='daily'?'Tagesrätsel gelöst':'Level '+G.idx+' geschafft';
+  $('#ovStars').innerHTML='★'.repeat(s)+`<span class="off">${'★'.repeat(3-s)}</span>`;
+  $('#ovStars').setAttribute('aria-label',s+' von 3 Sternen');
+  $('#ovInfo').textContent=attempts+(attempts===1?' Versuch':' Versuche')+' · '+hints+(hints===1?' Tipp':' Tipps');
+  const share=$('#ovShare'),copied=$('#ovCopied');copied.hidden=true;
+  const add=(label,cls,fn)=>{const b=document.createElement('button');b.className='btn'+(cls?' '+cls:'');b.innerHTML=`<span>${label}</span>`;b.style.justifyContent='center';b.addEventListener('click',fn);btns.appendChild(b)};
+  if(G.mode==='daily'){
+    const date=G.key.split('-').reverse().join('.');
+    const text=`Weiche · Tagesrätsel ${date}\n${'⭐'.repeat(s)} · ${attempts} ${attempts===1?'Versuch':'Versuche'}\n${rows.join('\n')}`;
+    share.hidden=false;share.textContent=text;
+    add('Ergebnis kopieren','primary',()=>{
+      const done=()=>{copied.hidden=false;copied.textContent='Kopiert. Du kannst es jetzt teilen.'};
+      const fail=()=>{const rg=document.createRange();rg.selectNodeContents(share);const sel=getSelection();sel.removeAllRanges();sel.addRange(rg);copied.hidden=false;copied.textContent='Text markiert. Kopiere ihn mit deinem Gerät.'};
+      try{navigator.clipboard.writeText(text).then(done,fail)}catch(e){fail()}});
+    add('Zum Menü','',()=>show('menu'));
+  }else{
+    share.hidden=true;
+    if(G.idx<LEVELS.length)add('Nächstes Level','primary',()=>startLevel(G.idx+1));
+    else{const p=document.createElement('p');p.textContent='Du hast alle 20 Level des Prototyps gelöst.';btns.appendChild(p)}
+    add('Nochmal spielen','',()=>startLevel(G.idx));
+    add('Levelauswahl','',()=>show('levels'));
+  }
+  ov.hidden=false;
+  const f=btns.querySelector('button');f&&f.focus({preventScroll:true});
+}
+
+/* ---------- Bedienleiste ---------- */
+$('#btnStart').addEventListener('click',()=>run());
+$('#btnReset').addEventListener('click',()=>{
+  if(!G)return;
+  if(G.running){cancelRun();G.cur=-1;G.results=[];G.counts={};refresh();setStatus('Abgebrochen. Die Stellung ist wieder wie vor dem Start.');return}
+  G.states=G.L.start.slice();G.results=[];G.counts={};G.bad=null;G.hint=null;refresh();
+  setStatus('Alle Weichen stehen wieder in der Ausgangsstellung.');
+});
+$('#btnSpeed').addEventListener('click',()=>{speed=speed===1?2:speed===2?3:1;$('#btnSpeed').textContent='Tempo '+speed+'×'});
+$('#btnHint').addEventListener('click',()=>{
+  if(!G||G.running)return;
+  const L=G.L;let best=null,bd=1e9;
+  L.sols.forEach(s=>{const d=L.internals.filter(i=>s[i]!==G.states[i]);if(d.length<bd){bd=d.length;best=d}});
+  if(!bd){setStatus('<b>Deine Stellung ist richtig.</b> Drücke Start.');return}
+  G.hints++;G.hint=best[0];refresh();
+  const nd=L.T.nodes[best[0]];
+  setStatus(`Tipp: Stelle <b>${nd.label}</b> um.`+(nd.kind==='T'?' Beim Flipflop zählt die Startrichtung.':''));
+});
+
+show('menu');
+window.__weiche={levelData,dailyData,LEVELS,simulate};
+})();
+</script>
+</body>
+</html>
