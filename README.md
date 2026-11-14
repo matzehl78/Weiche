@@ -6,7 +6,9 @@ Ein Logik-Puzzle für Mobile im Stil eines Stellwerks: Stelle Weichen und Flipfl
 
 ## Spielen
 
-`web/index.html` im Browser öffnen. Es braucht keinen Build und keinen Server.
+Online: https://matzehl78.github.io/Weiche/ (wird bei jeder Änderung an `web/` automatisch aktualisiert)
+
+Lokal: `web/index.html` im Browser öffnen. Es braucht keinen Build und keinen Server.
 
 ## Spielelemente
 
